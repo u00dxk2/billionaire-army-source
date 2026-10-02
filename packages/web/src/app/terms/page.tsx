@@ -12,7 +12,7 @@ export default function TermsPage() {
       <span className="hero-badge">Legal</span>
       <h1 className="prose-title">Terms of Service</h1>
       <p className="prose-legal-meta">
-        Effective date: July 5, 2026 · Operator: Skylark Creations LLC, doing
+        Effective date: October 1, 2026 · Operator: Skylark Creations LLC, doing
         business as &ldquo;Billionaire Army&rdquo; (&ldquo;Billionaire
         Army,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
         &ldquo;our&rdquo;) · Contact: hello@skylarkcreations.com
