@@ -1,0 +1,47 @@
+{
+  "name": "@ba/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "start": "node dist/worker.js",
+    "seed:wikidata": "tsx src/fetchers/wikidata-seed.ts",
+    "fetch:wikidata": "tsx src/fetchers/wikidata.ts",
+    "fetch:fec": "tsx src/fetchers/fec.ts",
+    "fetch:sec": "tsx src/fetchers/sec-edgar.ts",
+    "fetch:990": "tsx src/fetchers/propublica-990.ts",
+    "fetch:news": "tsx src/fetchers/newsapi.ts",
+    "fetch:gdelt": "tsx src/fetchers/gdelt.ts",
+    "import:giving-pledge": "tsx src/fetchers/giving-pledge.ts",
+    "import:direct-giving": "tsx src/fetchers/direct-giving.ts",
+    "import:business": "tsx src/fetchers/business-profile.ts",
+    "score:preview": "tsx src/score-preview.ts",
+    "seed:rtb": "tsx src/fetchers/rtb-seed.ts",
+    "cleanup": "tsx src/cleanup.ts",
+    "generate:summaries": "tsx src/fetchers/profile-summary.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
+    "score:all": "tsx src/score-all.ts",
+    "curate:feed": "tsx src/fetchers/feed-curator.ts",
+    "verify:990": "tsx src/verify-990-attribution.ts",
+    "check:fec-withheld": "tsx src/check-fec-withheld-prose.ts",
+    "check:fec-withheld-stored": "tsx src/check-fec-withheld-prose.ts --stored",
+    "check:summary-quarantine": "tsx src/check-summary-quarantine.ts",
+    "check:giving-caveat": "tsx src/check-giving-caveat-collision.ts",
+    "check:card-badge": "tsx src/check-card-badge-agreement.ts"
+  },
+  "dependencies": {
+    "@ba/db": "*",
+    "@ba/shared": "*",
+    "@anthropic-ai/sdk": "^0.124.0",
+    "drizzle-orm": "^0.45.2",
+    "openai": "^6.27.0",
+    "pg-boss": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

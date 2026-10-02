@@ -1,0 +1,27 @@
+-- R-048 follow-up to B-018 — 2026-08-07
+--
+-- `curator_passed_over` (migration 0006) is the first table added since the B-018
+-- revoke, and it landed with RLS OFF. `npm run check:rls` caught it on the run
+-- immediately after `db:migrate`, exactly as CLAUDE.md says it will — this file is
+-- the completion of that gate's finding, not a new discovery.
+--
+-- WORTH BEING PRECISE ABOUT THE EXPOSURE, because the probe's headline overstates
+-- this one: the durability half of B-018 (ALTER DEFAULT PRIVILEGES FOR ROLE postgres)
+-- held. The new table inherited NO grants — the same run reported "grants to
+-- anon/authenticated/PUBLIC: none" and all four sampled anon reads returned 401. So
+-- the public key could never read this table. What was missing is step 3, the
+-- belt-and-suspenders ENABLE RLS, whose whole job is to deny anyway if a future GRANT
+-- slips past step 2.
+--
+-- THE STANDING SHAPE, so the next table does not repeat it: step 3 of the B-018 file
+-- is a HARDCODED table list, and Postgres has no "RLS on by default" setting to make
+-- it automatic. So every new table needs one line, and the thing that catches a
+-- forgotten one is check:rls after db:migrate. Do not treat a green migration as
+-- evidence; the migration cannot know about this.
+--
+-- HOW TO APPLY (idempotent, safe to re-run):
+--   sh -c 'psql "$DATABASE_URL" -f packages/db/sql/2026-08-07-enable-rls-curator-passed-over.sql'
+-- then VERIFY (do not accept "it applied" as evidence):
+--   npm run check:rls
+
+ALTER TABLE public.curator_passed_over ENABLE ROW LEVEL SECURITY;

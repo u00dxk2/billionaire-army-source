@@ -1,0 +1,52 @@
+{
+  "name": "billionaire-army",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Civic accountability platform where the public defines SMART goals and every U.S. billionaire carries a public, sourced giving record",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev -w packages/api",
+    "dev:web": "npm run dev -w packages/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run generate -w packages/db",
+    "db:migrate": "npm run migrate -w packages/db",
+    "db:seed": "npm run seed -w packages/db",
+    "seed:wikidata": "npm run seed:wikidata -w packages/jobs",
+    "fetch:wikidata": "npm run fetch:wikidata -w packages/jobs",
+    "fetch:fec": "npm run fetch:fec -w packages/jobs",
+    "fetch:sec": "npm run fetch:sec -w packages/jobs",
+    "fetch:990": "npm run fetch:990 -w packages/jobs",
+    "fetch:news": "npm run fetch:news -w packages/jobs",
+    "fetch:gdelt": "npm run fetch:gdelt -w packages/jobs",
+    "import:giving-pledge": "npm run import:giving-pledge -w packages/jobs",
+    "import:direct-giving": "npm run import:direct-giving -w packages/jobs",
+    "import:business": "npm run import:business -w packages/jobs",
+    "score:preview": "npm run score:preview -w packages/jobs",
+    "seed:rtb": "npm run seed:rtb -w packages/jobs",
+    "cleanup": "npm run cleanup -w packages/jobs",
+    "generate:summaries": "npm run generate:summaries -w packages/jobs",
+    "score:all": "npm run score:all -w packages/jobs",
+    "curate:feed": "npm run curate:feed -w packages/jobs",
+    "check:rls": "node scripts/check-rls.mjs",
+    "verify:990": "npm run verify:990 -w packages/jobs",
+    "check:fec-withheld": "npm run check:fec-withheld -w packages/jobs",
+    "check:fec-withheld-stored": "npm run check:fec-withheld-stored -w packages/jobs",
+    "check:summary-quarantine": "npm run check:summary-quarantine -w packages/jobs --",
+    "check:giving-caveat": "npm run check:giving-caveat -w packages/jobs",
+    "check:card-badge": "npm run check:card-badge -w packages/jobs --"
+  },
+  "overrides": {
+    "esbuild": ">=0.25.0",
+    "postcss": "^8.5.18",
+    "@supabase/supabase-js": "^2.98.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

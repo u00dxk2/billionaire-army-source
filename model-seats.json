@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "lane": "billionaire-army",
+  "updated": "2026-09-06",
+  "seats": [
+    {
+      "seat": "feed-curator:passA-generator",
+      "type": "writer",
+      "file": "packages/jobs/src/fetchers/feed-curator.ts:68",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_FEED_CURATOR_PASSA_GENERATOR_MODEL",
+      "legacyEnv": "CURATOR_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "feed-curator:passB-relevance-verifier",
+      "type": "judge",
+      "file": "packages/jobs/src/fetchers/feed-curator.ts:70",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_FEED_CURATOR_PASSB_RELEVANCE_VERIFIER_MODEL",
+      "legacyEnv": "CURATOR_VERIFIER_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "feed-curator:passC-faithfulness-verifier",
+      "type": "judge",
+      "file": "packages/jobs/src/fetchers/feed-curator.ts:94",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_FEED_CURATOR_PASSC_FAITHFULNESS_VERIFIER_MODEL",
+      "legacyEnv": "CURATOR_FAITHFULNESS_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "feed-curator:b022-candidate-same-event-judge",
+      "type": "judge",
+      "file": "packages/jobs/src/fetchers/feed-curator.ts:77",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_FEED_CURATOR_B022_CANDIDATE_SAME_EVENT_JUDGE_MODEL",
+      "legacyEnv": "CURATOR_VERIFIER_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "feed-curator:b023-rewrite-same-event-judge",
+      "type": "judge",
+      "file": "packages/jobs/src/fetchers/feed-curator.ts:78",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_FEED_CURATOR_B023_REWRITE_SAME_EVENT_JUDGE_MODEL",
+      "legacyEnv": "CURATOR_VERIFIER_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "profile-summary:generate",
+      "type": "writer",
+      "file": "packages/jobs/src/fetchers/profile-summary.ts:65",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_PROFILE_SUMMARY_GENERATE_MODEL",
+      "legacyEnv": "SUMMARY_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    },
+    {
+      "seat": "profile-summary:faithfulness-verifier",
+      "type": "judge",
+      "file": "packages/jobs/src/fetchers/profile-summary.ts:80",
+      "model": "gpt-5.6-terra",
+      "fallback": null,
+      "envOverride": "SEAT_PROFILE_SUMMARY_FAITHFULNESS_VERIFIER_MODEL",
+      "legacyEnv": "SUMMARY_FAITHFULNESS_MODEL",
+      "since": "2026-09-06",
+      "lastEval": null,
+      "evalRef": null,
+      "providerOptions": {}
+    }
+  ]
+}

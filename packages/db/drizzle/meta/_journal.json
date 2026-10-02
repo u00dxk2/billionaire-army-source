@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1772750991752,
+      "tag": "0000_sloppy_warhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772816846351,
+      "tag": "0001_chemical_gambit",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772817198379,
+      "tag": "0002_eager_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773342675097,
+      "tag": "0003_mixed_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783086562301,
+      "tag": "0004_omniscient_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783275928037,
+      "tag": "0005_fuzzy_tinkerer",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786117850396,
+      "tag": "0006_boring_zarda",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789915411719,
+      "tag": "0007_steep_thundra",
+      "breakpoints": true
+    }
+  ]
+}

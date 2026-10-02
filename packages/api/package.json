@@ -1,0 +1,28 @@
+{
+  "name": "@ba/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "tsx --test src/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ba/db": "*",
+    "@ba/shared": "*",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^11.1.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.12.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

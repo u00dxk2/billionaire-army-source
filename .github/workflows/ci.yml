@@ -1,0 +1,27 @@
+name: CI
+
+# Typecheck and unit tests. No secrets: nothing here can reach a database or a paid API.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Run from the repository root so every workspace's tests run.
+      - run: npm test
