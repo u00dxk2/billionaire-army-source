@@ -1,13 +1,14 @@
 import type { FastifyPluginAsync } from "fastify";
 import { eq, and, desc, sql, ilike, inArray, ne } from "drizzle-orm";
 import { persons, personFacts, scoreSnapshots } from "@ba/db";
-import { politicalDominatesGiving, directGivingDominatesGrants, readPhilanthropyFacts, paginationSchema, proposePersonSchema, reviewActionSchema, foundationTotals, stripPipelineCommentary, formatCurrency, isFecRecordImpossible, topPartyLabel, SUMMARY_QUARANTINE_FACT_KEY, withoutApprovalMetadata, netWorthWithAge, netWorthSummaryNote } from "@ba/shared";
+import { GIVING_EVIDENCE_FACT_KEYS, politicalDominatesGiving, directGivingDominatesGrants, readPhilanthropyFacts, paginationSchema, proposePersonSchema, reviewActionSchema, foundationTotals, stripPipelineCommentary, formatCurrency, isFecRecordImpossible, topPartyLabel, SUMMARY_QUARANTINE_FACT_KEY, withoutApprovalMetadata, netWorthWithAge, netWorthSummaryNote } from "@ba/shared";
 import { authenticate, authenticateAdmin } from "../auth.js";
 import { firstSentences } from "../first-sentences.js";
 import { UUID_RE } from "../uuid.js";
 import { CONTENT_WRITE_LIMIT } from "../rate-limits.js";
 import { dailySeed, dailyOrder } from "../daily-ten-order.js";
 import { dailyTenPool } from "../daily-ten-pool.js";
+import { loadGradedIds, servedScore } from "../grade-status.js";
 import type { Db } from "@ba/db";
 
 export const personRoutes: FastifyPluginAsync = async (app) => {
@@ -62,10 +63,12 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
         scoreMap.set(s.personId, s.pbs);
       }
 
-      const enriched = results.map((p) => ({
-        ...p,
-        pbs: scoreMap.get(p.id) ?? null,
-      }));
+      // Not graded ⇒ no score served (grade-status.ts).
+      const graded = await loadGradedIds(db, personIds);
+      const enriched = results.map((p) => {
+        const s = servedScore(p.id, scoreMap.get(p.id), graded);
+        return { ...p, pbs: s.value, gradeStatus: s.gradeStatus };
+      });
 
       return {
         data: enriched,
@@ -126,12 +129,17 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
       .orderBy(desc(scoreSnapshots.date))
       .limit(1);
 
+    // Not graded ⇒ no score object at all, so no letter, number or component bar can render from it.
+    const graded = await loadGradedIds(db, [id]);
+    const s = servedScore(id, latestScore[0], graded);
+
     // B-046's approval marker (who approved a summary section, on which internal ruling) stays in
     // storage for the generator and is stripped here, the one route that serves raw fact rows.
     return {
       ...person[0],
       facts: facts.map(withoutApprovalMetadata),
-      score: latestScore[0] ?? null,
+      score: s.value,
+      gradeStatus: s.gradeStatus,
     };
   });
 
@@ -139,6 +147,11 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
   app.get("/leaderboard", async (request) => {
     const { page, limit } = paginationSchema.parse(request.query);
     const offset = (page - 1) * limit;
+
+    const hasGivingFact = sql`exists (select 1 from person_facts pf where pf.person_id = ${persons.id} and pf.fact_key in (${sql.join(
+      GIVING_EVIDENCE_FACT_KEYS.map((k) => sql`${k}`),
+      sql`, `,
+    )}))`;
 
     const results = await db
       .select({
@@ -157,11 +170,25 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
           )
         )
       )
-      .orderBy(desc(scoreSnapshots.pbs))
+      // Graded persons first, by score; the not-graded listed after them, by NAME, carrying no
+      // score. In SQL rather than after the page is cut, or pagination would split the two sets.
+      // The score sorts graded rows ONLY (`case … end` is null for the rest): ordering the
+      // not-graded by a score we withhold would still rank them by it across pages (Codex r1 #3).
+      .orderBy(
+        sql`${hasGivingFact} desc`,
+        sql`case when ${hasGivingFact} then ${scoreSnapshots.pbs} end desc nulls last`,
+        persons.name,
+      )
       .limit(limit)
       .offset(offset);
 
-    return { data: results };
+    const graded = await loadGradedIds(db, results.map((r) => r.person.id));
+    return {
+      data: results.map((r) => {
+        const s = servedScore(r.person.id, r.pbs, graded);
+        return { ...r, pbs: s.value, features: s.value == null ? null : r.features, gradeStatus: s.gradeStatus };
+      }),
+    };
   });
 
   // Daily Ten — deterministic 10 profiles per day
@@ -194,7 +221,11 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
         .from(personFacts)
         .where(inArray(personFacts.factType, RECEIPT_FACT_TYPES)),
     ]);
-    const scoredSet = new Set(scoredRows.map((r) => r.personId));
+    // "A real score" now means a GRADED one: a not-graded person has a stored number and no grade,
+    // and the floor exists so card #1 never opens on a thin profile.
+    const scoredIds = scoredRows.map((r) => r.personId);
+    const gradedScored = await loadGradedIds(db, scoredIds);
+    const scoredSet = new Set(scoredIds.filter((pid) => gradedScored.has(pid)));
     const receiptSet = new Set(receiptRows.map((r) => r.personId));
 
     const dailyIds = dailyOrder(dailyTenPool(candidates, scoredSet, receiptSet), seed).slice(0, 10);
@@ -417,12 +448,13 @@ export const personRoutes: FastifyPluginAsync = async (app) => {
 
     // Preserve the shuffled order
     const orderMap = new Map(dailyIds.map((id, i) => [id, i]));
+    // The pool's fewer-than-10 fallback can still admit a not-graded person; it gets no score.
+    const gradedTen = await loadGradedIds(db, dailyIds);
     const enriched = results
-      .map((p) => ({
-        ...p,
-        pbs: scoreMap.get(p.id) ?? null,
-        highlights: highlightsMap.get(p.id) ?? null,
-      }))
+      .map((p) => {
+        const s = servedScore(p.id, scoreMap.get(p.id), gradedTen);
+        return { ...p, pbs: s.value, gradeStatus: s.gradeStatus, highlights: highlightsMap.get(p.id) ?? null };
+      })
       .sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
 
     return { data: enriched, date: today };

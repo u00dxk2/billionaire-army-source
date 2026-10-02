@@ -6,7 +6,15 @@
 
 The Public Benefit Score is a 0–100 numeric proxy built from public records. It combines how much a person gives relative to their wealth, how much they give in absolute terms, whether they have signed The Giving Pledge, and how much public information is held about them. It is a proxy, not an objective measure of public benefit.
 
-The scorer uses whatever facts are present. Missing giving data counts as zero giving. A Giving Pledge badge or fact is accepted as given. Generated summaries and a profile image count toward information coverage. The profile page shows the two component totals (philanthropy and transparency), rounded, with their weights. It does not show every sub-term of the calculation.
+The scorer derives its inputs from stored facts and person fields, excluding summary-quarantine facts. In the arithmetic, missing giving data counts as zero giving. A Giving Pledge badge or fact is accepted as given. Generated summaries and a profile image count toward information coverage. For a graded person with a stored score, the profile page shows philanthropy and transparency as rounded percentages, with their weights of 65% and 35%. It does not show every sub-term of the calculation.
+
+## Not graded
+
+The batch scorer computes and stores a score for each person it processes, whether or not giving data exists. That score is not served for everyone. A person who holds neither a `total_giving` fact nor a `foundation_990s` fact is **not graded** (`gradeStatus()` in `packages/shared/src/pbs-evidence.ts`). For that person the API routes that serve a score return none (`packages/api/src/grade-status.ts`), and the pages print "Not graded" in place of a letter and a number. Among the entries the leaderboard returns, not-graded people follow graded people, ordered by name and without a rank.
+
+The reason is in the formula below. When extracted annual giving is zero, philanthropy equals its pledge term, so before rounding the score is `9.75 × pledge + 35 × min((distinct fact types + 1 if a profile image exists) ÷ 8, 1)`: a pledge flag plus a measure of how much data has been collected about the person. A Giving Pledge badge or fact alone does not make a person graded. A person who holds a giving fact that reports no giving stays graded.
+
+Feed cards follow the same rule. A card that tags a not-graded person carries no score, and if its stored summary mentions the score by name the summary is not served (`withholdScoreProse()` in `packages/shared/src/score-vocabulary.ts`). That check looks for the score's name; it does not detect a grade stated without it.
 
 ## Why v2 replaced v1
 

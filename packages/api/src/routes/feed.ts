@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { and, eq, desc, sql, inArray, notInArray } from "drizzle-orm";
 import { feedItems, feedItemPersons, feedComments, feedVotes, persons, personFacts, scoreSnapshots } from "@ba/db";
-import { paginationSchema, feedVoteSchema, feedCommentSchema, feedCommentModerateSchema, feedCategorySchema, pickTopSlice, foundationAssetsChip, repairFoundationProse, repairScoreProse, isFecRecordImpossible, withholdPoliticalProse, formatCurrency, supersededCardIds, repairPoliticalProse, currentGivingRatio, cardNetWorthDisplay } from "@ba/shared";
+import { paginationSchema, feedVoteSchema, feedCommentSchema, feedCommentModerateSchema, feedCategorySchema, pickTopSlice, foundationAssetsChip, repairFoundationProse, repairScoreProse, isFecRecordImpossible, withholdPoliticalProse, formatCurrency, supersededCardIds, repairPoliticalProse, currentGivingRatio, cardNetWorthDisplay, withholdScoreProse, statesOwnScore } from "@ba/shared";
 import type { GivingRatio } from "@ba/shared";
 
 /** The stored net_worth row as the feed routes read it — value plus what dates it (B-065). */
@@ -9,6 +9,7 @@ type NetWorthFactRow = { factValue: unknown; sourceType: string | null; retrieve
 import { authenticate, authenticateAdmin } from "../auth.js";
 import { UUID_RE } from "../uuid.js";
 import { CONTENT_WRITE_LIMIT, VOTE_LIMIT } from "../rate-limits.js";
+import { loadGradedIds, servedScore } from "../grade-status.js";
 import type { Db } from "@ba/db";
 
 // R-040 front-door ranking. The archive stays in recency order (publishedAt
@@ -295,6 +296,9 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
       politicalTotals,
       netWorthFacts,
     } = await loadGivingRatios(db, personIds);
+    // Not graded ⇒ no live score for the chip or the prose repair, and a summary that states one is
+    // withheld whole (grade-status.ts, withholdScoreProse).
+    const graded = await loadGradedIds(db, personIds);
 
     // Comment counts (moderation-hidden comments excluded — see the flagged
     // filter note on GET /:id/comments)
@@ -324,7 +328,11 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
       // score (v2, 0–100). If we have no live score, drop the field rather
       // than show a stale value.
       const primaryId = taggedPersonIds[0];
-      const live = primaryId != null ? liveScore.get(primaryId) : undefined;
+      // ANY tagged person not graded ⇒ the card carries no score at all, chip included. The chip is
+      // the primary person's, but it renders beside every name tag on the card, and a letter next
+      // to a not-graded person's name is the thing this rule exists to stop (Codex r1 #2).
+      const anyNotGraded = taggedPersonIds.some((pid) => !graded.has(pid));
+      const live = primaryId != null && !anyNotGraded ? servedScore(primaryId, liveScore.get(primaryId), graded).value ?? undefined : undefined;
       const ctx = (item.contextData ?? {}) as Record<string, unknown>;
       const freshChip = primaryId != null ? philanthropyChips.get(primaryId) : undefined;
       // B-065 — the net-worth chip from the LIVE fact, with its age: a Wikidata figure (no stored
@@ -380,7 +388,10 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
         // it, so `ac844ce9` served a null political chip and "available records list $1.8 million
         // in political donations" in the same card until today. Gated on the SAME
         // `withheldPolitical` decision the profile uses — this never re-derives who is withheld.
-        summary: (primaryId != null && withheldPolitical.has(primaryId)
+        // NOT GRADED (2026-10-02), outermost with the B-037 withhold: a card tagging ANY not-graded
+        // person loses a summary that states a score. Any, not just the primary — the text can name
+        // whichever tagged person it likes, and on doubt the paragraph goes.
+        summary: (anyNotGraded ? withholdScoreProse : (s: string) => s)((primaryId != null && withheldPolitical.has(primaryId)
           ? withholdPoliticalProse
           : (s: string) => s)(
           // 2026-09-27: restate the political-donation TOTAL at the chip's live figure. Anchored on
@@ -399,7 +410,11 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
             primaryId != null ? politicalTotals.get(primaryId) : undefined,
             taggedPersonIds.length
           )
-        ),
+        )),
+        // The card says why its body is gone, as it already does for the B-037 withhold.
+        scoreWithheld: anyNotGraded && statesOwnScore(item.summary),
+        // So the card, its share text and its image can SAY "Not graded" rather than say nothing.
+        gradeStatus: taggedPersonIds.length === 0 ? undefined : anyNotGraded ? "not_graded" : "graded",
         // B-065 — the chip's age label, whether the grade divides by that figure, and the earlier figure
         // the text was written from. The card states these in one sentence (`netWorthAgeNote`); the prose
         // itself is NOT relabelled — three review rounds found an inline matcher labelling the wrong money.
@@ -465,6 +480,7 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
     let politicalTotal: number | undefined;
     let netWorthFact: NetWorthFactRow | undefined;
     let liveFeatures: unknown;
+    let anyNotGraded = false;
 
     if (personIds.length > 0) {
       const personRows = await db
@@ -496,7 +512,10 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
           featuresById.set(s.personId, s.features);
         }
       }
-      live = personIds[0] != null ? liveScore.get(personIds[0]) : undefined;
+      const graded = await loadGradedIds(db, personIds);
+      anyNotGraded = personIds.some((pid) => !graded.has(pid));
+      // Same card-wide rule as the list route: any not-graded tag ⇒ no chip.
+      live = personIds[0] != null && !anyNotGraded ? servedScore(personIds[0], liveScore.get(personIds[0]), graded).value ?? undefined : undefined;
       liveFeatures = personIds[0] != null ? featuresById.get(personIds[0]) : undefined;
 
       // R-052 — same live join as the list, so a deep-linked card does not
@@ -548,7 +567,8 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
         // B-037 PROSE leg, same as the list route. A deep-linked card is what a SHARE lands on,
         // so an unsupported political figure about a named living person travels furthest here.
         // Political-total prose repair, same as the list route — a SHARE lands here.
-        summary: (politicalWithheld ? withholdPoliticalProse : (s: string) => s)(
+        // NOT GRADED, same as the list route — a SHARE lands here.
+        summary: (anyNotGraded ? withholdScoreProse : (s: string) => s)((politicalWithheld ? withholdPoliticalProse : (s: string) => s)(
           repairPoliticalProse(
             repairScoreProse(
               repairFoundationProse(item.summary, foundationFact),
@@ -559,7 +579,9 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
             politicalTotal,
             personIds.length
           )
-        ),
+        )),
+        scoreWithheld: anyNotGraded && statesOwnScore(item.summary),
+        gradeStatus: personIds.length === 0 ? undefined : anyNotGraded ? "not_graded" : "graded",
         netWorthAsOf: nw.netWorthAsOf,
         gradeUsesStaleNetWorth: nw.gradeUsesStaleNetWorth,
         netWorthTextFigure: nw.textFigure,

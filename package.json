@@ -39,6 +39,7 @@
     "check:fec-withheld-stored": "npm run check:fec-withheld-stored -w packages/jobs",
     "check:summary-quarantine": "npm run check:summary-quarantine -w packages/jobs --",
     "check:giving-caveat": "npm run check:giving-caveat -w packages/jobs",
+    "check:not-graded": "npm run check:not-graded -w packages/jobs --",
     "check:card-badge": "npm run check:card-badge -w packages/jobs --"
   },
   "overrides": {

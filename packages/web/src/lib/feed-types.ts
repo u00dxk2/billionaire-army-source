@@ -49,6 +49,16 @@ export interface FeedItem {
    */
   politicalWithheld?: boolean;
   /**
+   * Not graded (2026-10-02) — a tagged person has no giving record on file, so the API withheld a
+   * summary that stated a giving score. Optional for the same reason as `politicalWithheld`.
+   */
+  scoreWithheld?: boolean;
+  /**
+   * "not_graded" when ANY tagged person has no giving record on file — the card then carries no
+   * score chip and says so. Absent on a card with no tagged person and on an older API build.
+   */
+  gradeStatus?: "graded" | "not_graded";
+  /**
    * B-065 — "undated estimate" / "as of Jun 2025" beside the net-worth chip, or null/absent when the
    * figure is current. The API decides it (`cardNetWorthDisplay`); the card only prints it.
    */

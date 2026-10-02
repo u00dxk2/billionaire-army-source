@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { pbsGrade } from "@ba/shared";
+import { pbsGrade, NOT_GRADED_LABEL } from "@ba/shared";
+import { orderLeaderboard, isGradedEntry } from "@/lib/leaderboard-order";
 
 interface LeaderboardEntry {
   person: { id: string; name: string; state: string | null; industry: string[] };
-  pbs: string;
-  features: Record<string, number>;
+  /** null = not graded: no giving fact on file, so no score is served (grade-status.ts). */
+  pbs: string | null;
+  features: Record<string, number> | null;
+  gradeStatus?: "graded" | "not_graded";
 }
+
+const isGraded = isGradedEntry;
 
 const PAGE_SIZE = 50;
 
@@ -41,12 +46,9 @@ export default function LeaderboardView({ entries }: { entries: LeaderboardEntry
       if (industryFilter && !e.person.industry.includes(industryFilter)) return false;
       return true;
     });
-    // Sort by PBS: descending = best first (default), ascending = worst first.
-    return matches.sort((a, b) =>
-      sortDir === "desc"
-        ? Number(b.pbs) - Number(a.pbs)
-        : Number(a.pbs) - Number(b.pbs)
-    );
+    // Graded by score in the chosen direction, then the not graded by name — in BOTH directions.
+    // The rule and its test live in lib/leaderboard-order.ts.
+    return orderLeaderboard(matches, sortDir);
   }, [entries, query, stateFilter, industryFilter, sortDir]);
 
   const filtersActive = query.trim() !== "" || stateFilter !== "" || industryFilter !== "";
@@ -156,6 +158,27 @@ export default function LeaderboardView({ entries }: { entries: LeaderboardEntry
           </thead>
           <tbody>
             {shown.map((entry, i) => {
+              if (!isGraded(entry)) {
+                // Listed, never ranked: no rank number, no letter, no score.
+                return (
+                  <tr key={entry.person.id} className="leaderboard-row--not-graded">
+                    <td className="leaderboard-rank" aria-label="Not ranked">—</td>
+                    <td className="leaderboard-name">
+                      <a href={`/billionaires/${entry.person.id}`}>{entry.person.name}</a>
+                    </td>
+                    <td className="leaderboard-meta">{entry.person.state ?? "—"}</td>
+                    <td className="leaderboard-meta">
+                      {entry.person.industry.join(", ") || "—"}
+                    </td>
+                    <td
+                      style={{ textAlign: "right", fontSize: "0.8rem", color: "var(--color-text-secondary)" }}
+                      title="No charitable giving record on file, so we do not score this person. That says nothing about how much they give."
+                    >
+                      {NOT_GRADED_LABEL}
+                    </td>
+                  </tr>
+                );
+              }
               const pbs = Number(entry.pbs);
               const grade = pbsGrade(pbs);
               return (

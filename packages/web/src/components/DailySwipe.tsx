@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import { pbsGrade, topPartyLabel } from "@ba/shared";
+import { pbsGrade, topPartyLabel, NOT_GRADED_LABEL } from "@ba/shared";
 import { SITE_URL } from "@/lib/site";
 import { useVoteSaves } from "@/lib/use-vote-saves";
 import VoteSaveNotices from "./VoteSaveNotices";
@@ -37,6 +37,8 @@ interface Person {
   badges: { givingPledge?: boolean };
   images: string[];
   pbs: string | null;
+  /** "not_graded": no giving record on file, so the API serves no score for this person. */
+  gradeStatus?: "graded" | "not_graded";
   highlights: Highlights | null;
 }
 
@@ -197,7 +199,7 @@ export default function DailySwipe({ persons, date }: { persons: Person[]; date:
       const r = results[p.id];
       const sym = r === "approve" ? "+" : r === "disapprove" ? "-" : "~";
       const g = gradeOf(p);
-      return `${sym} ${p.name}${g ? ` (${g})` : ""}`;
+      return `${sym} ${p.name}${g ? ` (${g})` : p.gradeStatus === "not_graded" ? ` (${NOT_GRADED_LABEL.toLowerCase()})` : ""}`;
     });
 
     const leadLines: string[] = [];
@@ -296,11 +298,13 @@ export default function DailySwipe({ persons, date }: { persons: Person[]; date:
                     {p.highlights?.netWorth}{p.highlights?.netWorth && p.state ? " · " : ""}{p.state}
                   </span>
                 </div>
-                {grade && (
+                {grade ? (
                   <div className="daily-result-grade" style={{ background: grade.color }}>
                     {grade.letter}
                   </div>
-                )}
+                ) : p.gradeStatus === "not_graded" ? (
+                  <div className="daily-card-not-graded">{NOT_GRADED_LABEL}</div>
+                ) : null}
               </a>
             );
           })}
@@ -376,12 +380,17 @@ export default function DailySwipe({ persons, date }: { persons: Person[]; date:
                 ))}
               </div>
             </div>
-            {grade && (
+            {grade ? (
               <div className="daily-card-grade" style={{ background: grade.color }}>
                 <span className="daily-card-grade-letter">{grade.letter}</span>
                 <span className="daily-card-grade-score">{pbs!.toFixed(1)}</span>
               </div>
-            )}
+            ) : current.gradeStatus === "not_graded" ? (
+              // Not graded: the API serves no score for a person with no giving record on file.
+              <div className="daily-card-not-graded" title="No charitable giving record on file, so we do not score this person.">
+                {NOT_GRADED_LABEL}
+              </div>
+            ) : null}
           </div>
 
           {/* Receipt hook — the single strongest sourced fact, leading the card */}

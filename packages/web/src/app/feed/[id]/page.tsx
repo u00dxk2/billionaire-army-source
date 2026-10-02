@@ -38,7 +38,9 @@ export async function generateMetadata({
     ? item.summary
     : item.politicalWithheld
       ? "We're not showing a political figure for this person: we match FEC records by name only, and we can't prove this one is theirs."
-      : item.summary;
+      : item.scoreWithheld
+        ? "Not graded: we hold no charitable giving record for this person, so we do not give them a giving score."
+        : item.summary;
   // B-065: the unfurl carries the card's net-worth age sentence too — the description repeats the
   // prose, and the card body's note does not travel with it (Codex r3-4 #1).
   const note = feedCardNetWorthNote(item);

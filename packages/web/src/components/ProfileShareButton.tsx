@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { READER_FACING_GRADE_NOUN, readerFacingScoreValue, pbsGrade } from "@ba/shared";
+import { READER_FACING_GRADE_NOUN, readerFacingScoreValue, pbsGrade, NOT_GRADED_LABEL, NOT_GRADED_REASON } from "@ba/shared";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -28,11 +28,14 @@ export default function ProfileShareButton({
   personId,
   netWorth,
   pbs,
+  notGraded = false,
 }: {
   name: string;
   personId: string;
   netWorth: string | null;
   pbs: number | null;
+  /** No giving record on file: the share says "not graded" instead of saying nothing. */
+  notGraded?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -48,6 +51,8 @@ export default function ProfileShareButton({
       receiptBits.push(
         `${READER_FACING_GRADE_NOUN} ${grade.letter} (${readerFacingScoreValue(pbs)})`
       );
+    } else if (notGraded) {
+      receiptBits.push(`${READER_FACING_GRADE_NOUN}: ${NOT_GRADED_LABEL.toLowerCase()} (${NOT_GRADED_REASON})`);
     }
 
     const receiptUrl = `${SITE_URL}/billionaires/${personId}`;

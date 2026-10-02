@@ -274,6 +274,22 @@ export default async function Image({
                 {`Giving${pbsNum !== null ? ` ${Math.round(pbsNum)}` : ""}`}
               </div>
             </div>
+          ) : (item as { gradeStatus?: unknown }).gradeStatus === "not_graded" ? (
+            // A tagged person has no giving record on file ⇒ the card carries no grade, and the
+            // unfurl says so. Same legibility-pinned size as the label it replaces. One string child.
+            <div
+              style={{
+                display: "flex",
+                marginLeft: 28,
+                fontSize: OG_FEED_TYPE.gradeLabel.px,
+                fontWeight: 700,
+                color: TEXT,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              {"Giving: not graded"}
+            </div>
           ) : null}
         </div>
 

@@ -20,13 +20,13 @@
 
 import OpenAI from "openai";
 import { createDb, persons, personFacts, feedItems, feedItemPersons, scoreSnapshots, curatorPassedOver } from "@ba/db";
-import { eq, inArray, desc, sql, gte } from "drizzle-orm";
+import { and, eq, inArray, desc, sql, gte } from "drizzle-orm";
 import { CROSS_RUN_EVENT_THRESHOLD, eventSignature, jaccardScore, sameEvent } from "./feed-event-dedup";
 import { GRAY_BAND_FLOOR, grayBandMatches, judgeSameEvent, remapToOriginal, type CandidatePair } from "./feed-same-event-judge";
 // accountabilityScore + credibilityTier live in @ba/shared (moved 2026-07-25,
 // R-040) because the API's DISPLAY ranking scores cards with the same signals
 // the curator uses for SELECTION — one calibration, two call sites.
-import { accountabilityScore, credibilityTier, foundationAssetsChip, sourceLabel, isFecRecordImpossible, formatCurrency, readerFacingScorePhrase } from "@ba/shared";
+import { accountabilityScore, credibilityTier, foundationAssetsChip, sourceLabel, isFecRecordImpossible, formatCurrency, readerFacingScorePhrase, GIVING_EVIDENCE_FACT_KEYS, gradeStatus } from "@ba/shared";
 // Candidate-layer kind read + the soft same-kind demotion it feeds (R-048, 2026-09-07).
 // Same @ba/shared home as accountabilityScore and eventSignature, for the same reason:
 // one calibration, no second copy in packages/jobs.
@@ -677,8 +677,19 @@ async function main() {
     .from(scoreSnapshots)
     .where(inArray(scoreSnapshots.personId, personIds));
 
+  // NOT GRADED (2026-10-02, `gradeStatus` in @ba/shared): a person with no giving fact on file has
+  // no grade, so the writer and Pass C are handed none — `readerFacingScorePhrase(null)` emits no
+  // score line at all, and a card cannot state a grade nobody gave it.
+  const givingKeyRows = await db
+    .select({ personId: personFacts.personId, factKey: personFacts.factKey })
+    .from(personFacts)
+    .where(and(inArray(personFacts.personId, personIds), inArray(personFacts.factKey, [...GIVING_EVIDENCE_FACT_KEYS])));
+  const givingKeysById = new Map<string, string[]>();
+  for (const r of givingKeyRows) givingKeysById.set(r.personId, [...(givingKeysById.get(r.personId) ?? []), r.factKey]);
+
   const scoreMap = new Map<string, string>();
   for (const s of scores) {
+    if (gradeStatus(givingKeysById.get(s.personId) ?? []) !== "graded") continue;
     scoreMap.set(s.personId, s.pbs);
   }
 

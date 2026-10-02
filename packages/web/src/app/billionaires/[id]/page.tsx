@@ -21,6 +21,8 @@ import {
   netWorthWithAge,
   cardNetWorthDisplay,
   netWorthSummaryNote,
+  NOT_GRADED_LABEL,
+  NOT_GRADED_REASON,
 } from "@ba/shared";
 import { SITE_URL } from "@/lib/site";
 import { formatCurrency } from "@/lib/format";
@@ -51,11 +53,14 @@ interface PersonDetail {
   usPresence: { type: string; details: string }[];
   images: string[];
   facts: Fact[];
+  /** null for a not-graded person — the API serves no score for them (grade-status.ts). */
   score: {
     pbs: string;
     features: Record<string, number>;
     date: string;
   } | null;
+  /** Absent on an older API build; treat absent as "graded" only if a score is present. */
+  gradeStatus?: "graded" | "not_graded";
 }
 
 // Human-readable labels for the machine sourceType tokens stored on each fact.
@@ -1006,6 +1011,36 @@ function ScoreBreakdown({
   );
 }
 
+/**
+ * Not graded (2026-10-02): a person with no charitable giving record on file carries no letter
+ * and no number anywhere (`gradeStatus` in @ba/shared; served as `score: null` by the API). With
+ * no giving data the old score was built entirely from how many fact types WE hold, so it graded
+ * our coverage, not the person.
+ */
+function NotGradedSection({ givingPledge }: { givingPledge: boolean }) {
+  return (
+    <div className="card profile-section" id="score-breakdown">
+      <SectionHeader title="Giving score" icon="SCORE" />
+      <p className="profile-not-graded">{NOT_GRADED_LABEL} — {NOT_GRADED_REASON}</p>
+      <p className="score-formula-intro">
+        We hold no charitable giving record for this person: no foundation filing we can tie to them
+        and no documented direct gifts. Without one, a score would only measure how much data we
+        happen to have, so we do not give one. That says nothing about how much they give.
+      </p>
+      {givingPledge && (
+        <p className="score-formula-intro">
+          They have signed the Giving Pledge. A pledge is a promise, not a record of giving, so on its
+          own it does not produce a grade.
+        </p>
+      )}
+      <p className="score-formula-intro">
+        Know of a gift we are missing?{" "}
+        <a href="mailto:hello@skylarkcreations.com">Tell us</a> and we will source it.
+      </p>
+    </div>
+  );
+}
+
 // Per-page metadata (AEO 2026-06-29): each scorecard gets a sourced, descriptive
 // title + canonical + OG so it's a distinct, citeable entity to AI crawlers and
 // link unfurls — not a generic "Billionaire Army" tab. Fetches the same person the
@@ -1035,14 +1070,19 @@ export async function generateMetadata({
   const pbs = person.score ? Number(person.score.pbs) : null;
   const grade = pbs != null ? pbsGrade(pbs) : null;
 
+  // A not-graded person is served `score: null`, so `grade` is null here and neither line states one.
+  const notGraded = person.gradeStatus === "not_graded";
   const title = grade
     ? `${person.name} — Giving Score ${grade.letter} (${pbs!.toFixed(0)}) | Billionaire Army`
-    : `${person.name} | Billionaire Army`;
+    : notGraded
+      ? `${person.name} — ${NOT_GRADED_LABEL} | Billionaire Army`
+      : `${person.name} | Billionaire Army`;
 
   const descParts = [
     person.name,
     netWorth ? `net worth ${netWorth}` : null,
     grade ? `giving score ${grade.letter} (${pbs!.toFixed(0)}/100)` : null,
+    notGraded ? `giving score: ${NOT_GRADED_LABEL.toLowerCase()} (${NOT_GRADED_REASON})` : null,
   ].filter(Boolean);
   const description = `${descParts.join(" · ")}. Sourced philanthropy, political-giving, and SEC data — every claim source-linked.`;
 
@@ -1149,6 +1189,16 @@ export default async function BillionaireDetailPage({
       alternateName: pbsGrade(pbsNum).letter,
       description:
         "Open, versioned 0–100 measure of how much of their wealth they actually give to the public good.",
+    });
+  } else if (person.gradeStatus === "not_graded") {
+    // The machine-readable twin of the page's "Not graded": a crawler that finds no score property
+    // cannot tell "not graded" from "not published", so it is said in words, never as a number.
+    additionalProperty.push({
+      "@type": "PropertyValue",
+      name: "Giving score",
+      value: `${NOT_GRADED_LABEL} — ${NOT_GRADED_REASON}`,
+      description:
+        "We hold no charitable giving record for this person, so we do not score them. This is not a low score and says nothing about how much they give.",
     });
   }
   if (netWorthFact) {
@@ -1264,6 +1314,7 @@ export default async function BillionaireDetailPage({
               personId={person.id}
               netWorth={netWorthFact ? netWorthWithAge(netWorthFact.factValue, netWorthFact) : null}
               pbs={person.score ? Number(person.score.pbs) : null}
+              notGraded={person.gradeStatus === "not_graded"}
             />
           </div>
         </div>
@@ -1318,6 +1369,15 @@ export default async function BillionaireDetailPage({
               </div>
             );
           })()}
+          {person.gradeStatus === "not_graded" && (
+            // The grade slot, stated in words: no letter, no number (grade-status.ts serves none).
+            <div className="profile-quick-stat">
+              <div>
+                <a href="#score-breakdown" className="profile-not-graded">{NOT_GRADED_LABEL}</a>
+                <div className="profile-not-graded-reason">{NOT_GRADED_REASON}</div>
+              </div>
+            </div>
+          )}
           {netWorthFact && (
             <div className="profile-quick-stat">
               <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>
@@ -1410,11 +1470,15 @@ export default async function BillionaireDetailPage({
         </div>
       )}
 
-      {/* Score breakdown */}
-      <ScoreBreakdown
-        score={person.score}
-        factKeys={person.facts.map((f) => f.factKey)}
-      />
+      {/* Score breakdown — or, for a person we hold no giving record on, why there is none. */}
+      {person.gradeStatus === "not_graded" ? (
+        <NotGradedSection givingPledge={!!person.badges?.givingPledge} />
+      ) : (
+        <ScoreBreakdown
+          score={person.score}
+          factKeys={person.facts.map((f) => f.factKey)}
+        />
+      )}
 
       {/* Wikidata link */}
       {person.facts.length > 0 && (

@@ -48,6 +48,7 @@ interface PersonForImage {
   images: string[];
   facts: Fact[];
   score: { pbs: string } | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 async function getPerson(id: string): Promise<PersonForImage | null> {
@@ -276,6 +277,22 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               >
                 {`Giving ${Math.round(pbsNum as number)}`}
               </div>
+            </div>
+          ) : person.gradeStatus === "not_graded" ? (
+            // No giving record on file ⇒ no letter and no number; the unfurl SAYS so rather than
+            // leaving a gap. Same legibility-pinned size as the label it replaces. One string child.
+            <div
+              style={{
+                display: "flex",
+                marginLeft: 40,
+                fontSize: OG_PROFILE_TYPE.gradeLabel.px,
+                fontWeight: 700,
+                color: TEXT,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              {"Giving: not graded"}
             </div>
           ) : null}
         </div>

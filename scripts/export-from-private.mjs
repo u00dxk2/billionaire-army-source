@@ -327,7 +327,7 @@ const OVERRIDES = {
     mode: "head",
     file: "METHODOLOGY.head.md",
     keepFrom: "## Where it lives in code",
-    pin: "f1588e0d565a78dccb97bafb082be17793f216cbf3a88d38446f7c961981eb77",
+    pin: "294d4e964dc48867eca89e7c055fdd8dc7325bc824cda9451556dc97331bc4da",
     why: "claims narrowed to what the code does; production numbers labelled as dated snapshots",
   },
 };

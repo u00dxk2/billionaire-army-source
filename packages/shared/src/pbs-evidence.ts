@@ -46,6 +46,43 @@ export function hasGivingEvidence(factKeys: Iterable<string>): boolean {
 }
 
 /**
+ * NOT GRADED — the rule for whether a person carries a giving score AT ALL (2026-10-02).
+ *
+ * A person with no giving fact on file is not graded: no letter, no number, no sentence stating
+ * either, on any surface. `philanthropyZeroKind()` below only relabelled the 0% COMPONENT and
+ * hung a caveat on the profile headline; the letter itself kept rendering on the leaderboard,
+ * the feed card, /today, compare, both share images, the page title and the JSON-LD. With no
+ * giving fact, `computePbs` yields 35 × (source count ÷ 8) — an F, D or C made entirely of how
+ * many fact types WE hold about them. Measured 2026-10-02: 337 of 1,102 approved profiles.
+ *
+ * THE RULE READS THE FACT SET ONLY, never the score's `features` blob, on purpose:
+ * - a features lookup that misses reads as 0 and cannot fail loudly (KP-93, and the reason
+ *   `unevidencedGradeCaveat` needed its own wire-up test);
+ * - a Giving Pledge signer with no giving fact scores 0.15 on the component from the pledge
+ *   alone, so a "component is 0" rule keeps grading them — an F to C built from a PROMISE plus
+ *   our coverage count. The pledge still shows as its own badge; it is not a giving amount.
+ *
+ * A person WITH a giving fact stays graded even when it scores 0 ("evidenced-zero" below): a 990
+ * on file that reports no grants is a finding, and withholding it would hide one.
+ *
+ * ENFORCED AT THE API BOUNDARY (`packages/api/src/grade-status.ts`): every route that serves a
+ * score serves `null` for a not-graded person, so a surface nobody remembered shows nothing
+ * rather than a letter. Import this — never re-derive it in a checker (AGENTS.md, B-037).
+ */
+export type GradeStatus = "graded" | "not_graded";
+
+export function gradeStatus(factKeys: Iterable<string>): GradeStatus {
+  return hasGivingEvidence(factKeys) ? "graded" : "not_graded";
+}
+
+/** What a not-graded person's grade slot says. One copy, every surface. */
+export const NOT_GRADED_LABEL = "Not graded";
+export const NOT_GRADED_REASON = "insufficient data";
+/** The sentence form, for the profile and for page descriptions. */
+export const NOT_GRADED_EXPLANATION =
+  "Not graded — insufficient data. We hold no charitable giving record for this person, so we do not score them. That says nothing about how much they give.";
+
+/**
  * Should the philanthropy component render as "no data on file" rather than 0%?
  *
  * TRUE only when BOTH hold: the component scored exactly 0, AND no giving fact

@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import ComparePicker from "@/components/ComparePicker";
-import { pbsGrade, foundationTotals, philanthropyZeroKind, isFecRecordImpossible, topPartyLabel, netWorthWithAge } from "@ba/shared";
+import { pbsGrade, foundationTotals, philanthropyZeroKind, isFecRecordImpossible, topPartyLabel, netWorthWithAge, NOT_GRADED_LABEL, NOT_GRADED_REASON } from "@ba/shared";
 import { formatCurrency } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,7 @@ interface PersonDetail {
     features: Record<string, number>;
     date: string;
   } | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 interface ListResponse {
@@ -126,7 +127,8 @@ function CompareColumn({ person }: { person: PersonDetail }) {
       <dl className="compare-stats">
         <div className="compare-stat">
           <dt>Giving Score</dt>
-          <dd>{pbs !== null ? pbs.toFixed(1) : "—"}</dd>
+          {/* A not-graded person is served `score: null` (no giving record on file). */}
+          <dd>{pbs !== null ? pbs.toFixed(1) : person.gradeStatus === "not_graded" ? `${NOT_GRADED_LABEL} (${NOT_GRADED_REASON})` : "—"}</dd>
         </div>
         <div className="compare-stat">
           <dt>Est. Net Worth</dt>

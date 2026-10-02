@@ -29,6 +29,7 @@
     "check:fec-withheld-stored": "tsx src/check-fec-withheld-prose.ts --stored",
     "check:summary-quarantine": "tsx src/check-summary-quarantine.ts",
     "check:giving-caveat": "tsx src/check-giving-caveat-collision.ts",
+    "check:not-graded": "tsx src/check-not-graded.ts",
     "check:card-badge": "tsx src/check-card-badge-agreement.ts"
   },
   "dependencies": {

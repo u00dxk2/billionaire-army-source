@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { NOT_GRADED_LABEL } from "@ba/shared";
 import { createClient } from "@/lib/supabase-browser";
 import { useVoteSaves } from "@/lib/use-vote-saves";
 import VoteSaveNotices from "./VoteSaveNotices";
@@ -15,6 +16,7 @@ interface Person {
   badges: { givingPledge?: boolean };
   images: string[];
   pbs: string | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 export default function SwipeCards({ persons }: { persons: Person[] }) {
@@ -109,9 +111,10 @@ export default function SwipeCards({ persons }: { persons: Person[] }) {
             </div>
           )}
           <h2 className="swipe-card-name">{current.name}</h2>
-          {current.pbs && (
+          {/* null = not graded (no giving record on file) — the API serves no score for it. */}
+          {(current.pbs || current.gradeStatus === "not_graded") && (
             <div className="pbs-chip" style={{ margin: "0.5rem auto", display: "inline-flex" }}>
-              Giving score: {Number(current.pbs).toFixed(1)}
+              {current.pbs ? `Giving score: ${Number(current.pbs).toFixed(1)}` : NOT_GRADED_LABEL}
             </div>
           )}
           {current.state && (

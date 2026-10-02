@@ -12,6 +12,7 @@ interface Person {
   badges: { givingPledge?: boolean };
   images: string[];
   pbs: string | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 type ViewMode = "swipe" | "grid";
@@ -19,7 +20,8 @@ type ViewMode = "swipe" | "grid";
 export default function BillionairesView({ persons: personsRaw }: { persons: Person[] }) {
   // Canon Wave 3 (Rules 5/2): grid is the default — "Profiles" promises a
   // directory, and the swipe view asked for a verdict on a card with no facts.
-  // Scored, data-rich profiles lead (PBS desc, unscored last, then A→Z).
+  // Scored, data-rich profiles lead (PBS desc, unscored last, then A→Z). "Unscored" now includes
+  // the not graded, whose score the API serves as null.
   const [view, setView] = useState<ViewMode>("grid");
   const [query, setQuery] = useState("");
   const [stateFilter, setStateFilter] = useState("");

@@ -64,10 +64,16 @@ Giving score v2 (0–100) = 65% Philanthropy + 35% Transparency.
 Letter grades: A ≥ 60, B ≥ 45, C ≥ 30, D ≥ 15, F below 15. The formula is open and
 versioned; full methodology + limitations: ${SITE_URL}/about
 
+Not graded: a person we hold no charitable giving record for (no foundation 990 we can
+tie to them and no documented direct gifts) gets no letter and no score — they show as
+"Not graded — insufficient data". A Giving Pledge signature alone does not produce a
+grade. Not graded says nothing about how much a person gives; please do not report it
+as a low score.
+
 ## Primary pages
 
 - ${SITE_URL}/ — home; the day's featured sourced "receipt"
-- ${SITE_URL}/billionaires — all ${tracked} scored profiles (search + filter)
+- ${SITE_URL}/billionaires — all ${tracked} profiles, scored where we hold a giving record (search + filter)
 - ${SITE_URL}/leaderboard — ranked by giving score (best- or worst-first)
 - ${SITE_URL}/feed — the Accountability Feed: GPT-curated, source-linked news cards
 - ${SITE_URL}/goals — public SMART goals billionaires can solve

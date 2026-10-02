@@ -3,8 +3,8 @@ import LeaderboardView from "@/components/LeaderboardView";
 
 interface LeaderboardEntry {
   person: { id: string; name: string; state: string | null; industry: string[] };
-  pbs: string;
-  features: Record<string, number>;
+  pbs: string | null;
+  features: Record<string, number> | null;
 }
 
 interface LeaderboardResponse {
@@ -30,6 +30,8 @@ export default async function LeaderboardPage() {
       <p className="page-subtitle">
         Ranked by giving score. Open formula, adjustable weights.
         Filter by state or industry to find the best billionaire near you.
+        People we hold no charitable giving record for are listed at the end as Not graded,
+        never ranked.
       </p>
 
       {error && (

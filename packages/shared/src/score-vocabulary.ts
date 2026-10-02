@@ -150,6 +150,41 @@ export function readerFacingScoreFigures(text: string): number[] {
 }
 
 /**
+ * Does this text NAME our score — "giving score", "giving grade", "PBS score", "Public Benefit
+ * score" — in any sentence shape at all?
+ *
+ * A STATED RULE, NOT A MATCHER, and deliberately so. The first version tried to recognise a score
+ * being STATED (name + connector + figure or letter). A cold Codex round broke it both ways on
+ * day one: "His giving score is just 13" and "an F giving grade" slipped through, while "the
+ * giving score is a measure of…" matched the letter A. That is the same matcher-gap class
+ * `withholdPoliticalProse` took three rounds to stop patching. So this claims less: it does not
+ * decide whether a score was stated, only whether the score was MENTIONED BY NAME, and the caller
+ * withholds on a mention. The failure mode is a withheld paragraph, never a published grade.
+ *
+ * KNOWN CEILING, named rather than patched: a verdict that never names the score ("Billionaire
+ * Army rates him an F") is not seen. The curator is handed no score for a not-graded person, so
+ * the writer has nothing to build that sentence from; `check:not-graded` reads what is served.
+ */
+export function statesOwnScore(text: string): boolean {
+  if (typeof text !== "string" || text.length === 0) return false;
+  return new RegExp(`\\b(?:${OWN_NAME}|${INTERNAL_NAME})\\b`, "i").test(text);
+}
+
+/**
+ * The summary of a card whose tagged person is NOT GRADED (`gradeStatus` in pbs-evidence.ts), once
+ * it names our score: removed WHOLE, byte-identical or not at all.
+ *
+ * Same shape as `withholdPoliticalProse`, and for the same measured reason: every attempt in this
+ * repo to splice a clause out of a GPT sentence corrupted something else in it. The card keeps its
+ * headline, chips and source link. `repairScoreProse` cannot do this job — with no live score it is
+ * a deliberate no-op, which would leave the frozen curation-time grade standing in the sentence.
+ */
+export function withholdScoreProse(text: string): string {
+  if (typeof text !== "string" || text.length === 0) return text;
+  return statesOwnScore(text) ? "" : text;
+}
+
+/**
  * Repair a card's own score where it was frozen into published prose: rename it to the badge's
  * vocabulary and re-state it at the badge's LIVE figure. Render-time, no prod data write — the
  * same display-side posture as the `pbs` override, the B-030 foundation chip and the political

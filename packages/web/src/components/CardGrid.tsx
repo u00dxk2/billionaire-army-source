@@ -1,6 +1,6 @@
 "use client";
 
-import { pbsGrade } from "@ba/shared";
+import { pbsGrade, NOT_GRADED_LABEL } from "@ba/shared";
 
 interface Person {
   id: string;
@@ -10,6 +10,7 @@ interface Person {
   badges: { givingPledge?: boolean };
   images: string[];
   pbs: string | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 export default function CardGrid({ persons }: { persons: Person[] }) {
@@ -66,12 +67,11 @@ export default function CardGrid({ persons }: { persons: Person[] }) {
                 )}
               </div>
 
-              {person.pbs && (
-                <div className="profile-card-footer">
-                  <span>Giving score: {Number(person.pbs).toFixed(1)}</span>
-                  <span>View profile &rarr;</span>
-                </div>
-              )}
+              <div className="profile-card-footer">
+                {/* null = not graded (no giving record on file) — the API serves no score for it. */}
+                <span>{person.pbs ? `Giving score: ${Number(person.pbs).toFixed(1)}` : person.gradeStatus === "not_graded" ? NOT_GRADED_LABEL : ""}</span>
+                <span>View profile &rarr;</span>
+              </div>
             </div>
           </a>
         );

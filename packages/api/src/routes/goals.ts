@@ -5,6 +5,7 @@ import { paginationSchema, createGoalSchema, createGoalRatingSchema, createGoalR
 import { authenticate } from "../auth.js";
 import { UUID_RE } from "../uuid.js";
 import { CONTENT_WRITE_LIMIT, VOTE_LIMIT } from "../rate-limits.js";
+import { loadGradedIds, servedScore } from "../grade-status.js";
 import type { Db } from "@ba/db";
 
 const US_STATES = [
@@ -148,6 +149,9 @@ export const goalRoutes: FastifyPluginAsync = async (app) => {
       netWorth: r.net_worth,
     }));
 
+    // Not graded ⇒ no score served and none used as a tiebreak (grade-status.ts).
+    const graded = await loadGradedIds(db, candidates.map((p) => p.id));
+
     const scored = candidates
       .map((p) => {
         const reasons: { type: string; label: string }[] = [];
@@ -181,13 +185,18 @@ export const goalRoutes: FastifyPluginAsync = async (app) => {
         (a, b) =>
           b.matchScore - a.matchScore ||
           (b.billions ?? 0) - (a.billions ?? 0) ||
-          Number(b.pbs ?? 0) - Number(a.pbs ?? 0)
+          Number(graded.has(b.id) ? b.pbs ?? 0 : 0) - Number(graded.has(a.id) ? a.pbs ?? 0 : 0)
       )
       .slice(0, 12)
       .map(({ billions: _billions, ...rest }) => rest);
 
+    const served = scored.map((p) => {
+      const s = servedScore(p.id, p.pbs, graded);
+      return { ...p, pbs: s.value, gradeStatus: s.gradeStatus };
+    });
+
     return {
-      data: scored,
+      data: served,
       heuristic: {
         states: [...matchedStates],
         industries: [...matchedIndustries],

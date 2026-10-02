@@ -10,6 +10,7 @@ import {
   READER_FACING_GRADE_NOUN,
   READER_FACING_SCORE_BADGE_LABEL,
   readerFacingScoreValue,
+  NOT_GRADED_LABEL,
 } from "@ba/shared";
 import { feedCardNetWorthNote } from "@/lib/feed-net-worth-note";
 import { SITE_URL } from "@/lib/site";
@@ -136,6 +137,8 @@ export default function FeedCard({
     // card's own prose cannot drift into three names for one number (R-081).
     if (grade && pbsNum !== null) {
       receiptBits.push(`${READER_FACING_GRADE_NOUN} ${grade.letter} (${readerFacingScoreValue(pbsNum)})`);
+    } else if (item.gradeStatus === "not_graded") {
+      receiptBits.push(`${READER_FACING_GRADE_NOUN}: ${NOT_GRADED_LABEL.toLowerCase()}`);
     }
 
     const parts: string[] = [];
@@ -250,6 +253,12 @@ export default function FeedCard({
           We&rsquo;re not showing a political figure here: we match FEC records by name only, and we
           can&rsquo;t prove this one is theirs. The full note is on the profile.
         </p>
+      ) : item.scoreWithheld ? (
+        // Same gate-on-the-flag rule as the notice above: only where the API removed the body.
+        <p className="feed-card-summary feed-card-summary--withheld">
+          This summary referred to our giving score. A person on this card is not graded: we hold no
+          charitable giving record for them. The source link below still carries the story.
+        </p>
       ) : (
         <p className="feed-card-summary">{item.summary}</p>
       )}
@@ -291,7 +300,7 @@ export default function FeedCard({
       )}
 
       {/* Context nuggets */}
-      {(ctx.netWorth || ctx.political || ctx.philanthropy || ctx.pbs) && (
+      {(ctx.netWorth || ctx.political || ctx.philanthropy || ctx.pbs || item.gradeStatus === "not_graded") && (
         <div className="feed-context">
           {ctx.netWorth && (
             <span className="feed-context-nugget">
@@ -321,6 +330,14 @@ export default function FeedCard({
             <span className="feed-context-nugget" title="Giving grade — rates their giving record, not this story.">
               <span className="feed-context-icon">{READER_FACING_SCORE_BADGE_LABEL}</span>
               {ctx.pbs}/100
+            </span>
+          ) : item.gradeStatus === "not_graded" ? (
+            <span
+              className="feed-context-nugget"
+              title="We hold no charitable giving record for a person on this card, so we do not score them. That says nothing about how much they give."
+            >
+              <span className="feed-context-icon">{READER_FACING_SCORE_BADGE_LABEL}</span>
+              {NOT_GRADED_LABEL}
             </span>
           ) : null}
           {ctx.political && (

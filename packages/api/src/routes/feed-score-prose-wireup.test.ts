@@ -66,7 +66,9 @@ test("BOTH served routes repair the summary, not just the list", () => {
   // property this test exists for is unchanged: the repair is what the route SERVES rather than
   // something computed and dropped. An adjacency-only pattern asserted the composition instead,
   // and went red on a change that satisfied it (2026-09-10).
-  const assigned = [...body.matchAll(/summary:[\s\S]{0,200}?repairScoreProse\s*\(/g)];
+  // Widened 200 → 320 on 2026-10-02: the not-graded withhold (`withholdScoreProse`) now wraps the
+  // B-037 one, outermost, for the same reason — it removes rather than restates.
+  const assigned = [...body.matchAll(/summary:[\s\S]{0,320}?repairScoreProse\s*\(/g)];
   assert.equal(assigned.length, 2, "each repair must be what the route actually serves as `summary`");
 
   // …and the only thing permitted to stand between `summary:` and the repair is the B-037
@@ -75,7 +77,7 @@ test("BOTH served routes repair the summary, not just the list", () => {
     const between = body.slice(m.index!, m.index! + m[0].length);
     assert.ok(
       /summary:\s*repairScoreProse\s*\($/.test(between) || between.includes("withholdPoliticalProse"),
-      `only the B-037 withhold may wrap the score repair, got: ${between.trim()}`,
+      `only the B-037 and not-graded withholds may wrap the score repair, got: ${between.trim()}`,
     );
   }
 });

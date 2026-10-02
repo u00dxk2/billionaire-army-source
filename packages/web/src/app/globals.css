@@ -1890,6 +1890,28 @@ body {
   opacity: 0.9;
 }
 
+/* Not graded (2026-10-02): no giving record on file, so no letter. Muted text, not a coloured disc —
+   a disc in grade position would read as a grade. */
+.daily-card-not-graded {
+  flex-shrink: 0;
+  max-width: 5.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* Not graded on the profile: the same slot as the grade disc, stated in words. */
+.profile-not-graded {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.profile-not-graded-reason {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
 /* Summary on card */
 /* B-065 — the net-worth age sentence under a /today bio: muted, never clamped away. */
 .daily-card-summary.daily-card-nw-note {

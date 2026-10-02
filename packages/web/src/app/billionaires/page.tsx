@@ -7,12 +7,12 @@ import { jsonLdString } from "@/lib/json-ld";
 export const metadata: Metadata = {
   title: "All Billionaire Profiles — Giving Scores | Billionaire Army",
   description:
-    "Browse every U.S.-connected billionaire we track, each carrying a giving score, with sourced philanthropy, political-giving, and SEC data. Search by name, state, or industry.",
+    "Browse every U.S.-connected billionaire we track — a giving score wherever we hold a giving record, Not graded where we do not — with sourced philanthropy, political-giving, and SEC data. Search by name, state, or industry.",
   alternates: { canonical: "/billionaires" },
   openGraph: {
     title: "All Billionaire Profiles | Billionaire Army",
     description:
-      "Every U.S.-connected billionaire we track, each carrying a giving score — every claim source-linked.",
+      "Every U.S.-connected billionaire we track, with a giving score wherever we hold a giving record — every claim source-linked.",
     url: `${SITE_URL}/billionaires`,
     type: "website",
     siteName: "Billionaire Army",
@@ -27,6 +27,7 @@ interface Person {
   badges: { givingPledge?: boolean; claimedPage?: boolean };
   images: string[];
   pbs: string | null;
+  gradeStatus?: "graded" | "not_graded";
 }
 
 interface PersonsResponse {
@@ -56,7 +57,7 @@ export default async function BillionairesPage() {
       ? {
           "@context": "https://schema.org",
           "@type": "ItemList",
-          name: "U.S. billionaires with a giving score",
+          name: "U.S. billionaires tracked by Billionaire Army",
           numberOfItems: items.length,
           itemListElement: items.map((p, i) => ({
             "@type": "ListItem",
