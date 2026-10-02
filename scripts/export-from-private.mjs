@@ -27,7 +27,7 @@
  * path skipped and why, and the counts. Exit 0 on success, 1 on error, 2 on usage error.
  *
  * Files this repo owns and the export never touches: README.md, SECURITY.md,
- * CONTRIBUTING.md, LICENSE-PENDING.md, .env.example, .github/workflows/ci.yml,
+ * CONTRIBUTING.md, LICENSE, .env.example, .github/workflows/ci.yml,
  * scripts/export-from-private.mjs, scripts/export-overrides/**. A stale exported file that is no longer on the
  * allowlist is NOT deleted automatically; the script lists such files so you can
  * remove them by hand.
@@ -152,7 +152,7 @@ const PUBLIC_OWNED = new Set([
   "README.md",
   "SECURITY.md",
   "CONTRIBUTING.md",
-  "LICENSE-PENDING.md",
+  "LICENSE",
   ".env.example",
   ".github/workflows/ci.yml",
   "scripts/export-from-private.mjs",
@@ -245,6 +245,11 @@ function transformRootPackageJson(text, jobsScripts) {
     }
   }
   pkg.scripts = scripts;
+  // This public tree is licensed AGPL-3.0 (owner's choice, 2026-10-01); see LICENSE.
+  if (pkg.license !== "AGPL-3.0-only") {
+    pkg.license = "AGPL-3.0-only";
+    transformLog.push('package.json: license set to "AGPL-3.0-only"');
+  }
   // The locked Supabase packages require Node 22+, so the public engine floor says so.
   if (pkg.engines?.node !== ">=22") {
     pkg.engines = { ...(pkg.engines ?? {}), node: ">=22" };

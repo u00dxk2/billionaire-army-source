@@ -165,4 +165,7 @@ See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Not chosen yet. See [LICENSE-PENDING.md](LICENSE-PENDING.md).
+The code is licensed under the GNU Affero General Public License v3.0
+(AGPL-3.0); see [LICENSE](LICENSE). In plain terms: anyone may use, modify and
+run it, and anyone who runs a modified version as a network service must
+publish their changes under the same license.
