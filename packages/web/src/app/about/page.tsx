@@ -184,9 +184,16 @@ export default function AboutPage() {
         Nothing. It&apos;s donation-funded, capped at $100 per person per year -
         a hard cap, not a suggestion, because a site about concentrated money
         should not be funded by concentrated money. No ads. No premium tier.
-        Nothing sold, including you. The code isn&apos;t public yet - it goes up
-        under an open licence before launch, and then you won&apos;t have to take
-        my word for any of that either.
+        Nothing sold, including you. The code is public, under the AGPL-3.0
+        licence -{" "}
+        <a
+          href="https://github.com/u00dxk2/billionaire-army-source"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          read it on GitHub
+        </a>{" "}
+        - so you don&apos;t have to take my word for any of that either.
       </p>
 
       <h2 className="prose-h2" id="contact">
@@ -200,11 +207,21 @@ export default function AboutPage() {
         . You don&apos;t need an account, and you don&apos;t need to explain who
         you are - if a number here is wrong, we want it fixed more than you do.
       </p>
-      {/* The public "open an issue on GitHub" route is gone while the repo is
-          private — it 404'd. Email is the route, and it is the better one for
-          this audience anyway (no developer account required). Restore the
-          public-filing option in the same commit that makes the repo public. */}
-      <p>Corrections to sourced facts are taken seriously and reviewed.</p>
+      {/* Email stays the PRIMARY route — it needs no developer account, and
+          for this audience a GitHub-only route is no route at all. The public
+          issue tracker is the second option, beside it, never instead of it. */}
+      <p>
+        If you&apos;d rather file it in public, you can{" "}
+        <a
+          href="https://github.com/u00dxk2/billionaire-army-source/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          open an issue on GitHub
+        </a>
+        . Corrections to sourced facts are taken seriously and reviewed either
+        way.
+      </p>
       <p>
         A site whose entire argument is &ldquo;go check the receipt&rdquo;
         doesn&apos;t get to be precious when somebody checks ours.
@@ -225,8 +242,15 @@ export default function AboutPage() {
         Service is the price of the palace. Consider this the itemized bill.
       </p>
 
-      {/* "View the source on GitHub" removed — the repository is private and the
-          link 404'd. Restore it in the same commit that makes the repo public. */}
+      <p className="prose-meta">
+        <a
+          href="https://github.com/u00dxk2/billionaire-army-source"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View the source on GitHub &#8599;
+        </a>
+      </p>
     </div>
   );
 }

@@ -21,7 +21,8 @@
  *     (or the stated count), or the export REFUSES. Where the removed text must not
  *     appear in this script either, a patch replaces N hash-verified lines after an anchor.
  *   - GLOBAL_RULES: regex rules applied to every exported text file (owner-ruling
- *     notes neutralised, local secret-manager wrapper removed, internal card ids dropped).
+ *     notes neutralised, local secret-manager wrapper removed, internal card ids dropped,
+ *     the methodology doc's private path rewritten to its exported name).
  *
  * Output: every path copied (with any transform applied), every allowlisted-area
  * path skipped and why, and the counts. Exit 0 on success, 1 on error, 2 on usage error.
@@ -567,6 +568,9 @@ const TEXT_EXT = /\.(?:ts|tsx|mts|cts|js|mjs|cjs|md|sql|css|html|txt|ya?ml)$/;
  */
 const GLOBAL_RULES = [
   { name: "local secret-manager wrapper", re: /doppler run --\s+/g, to: () => "" },
+  // The methodology doc is exported under a new name (see RENAMES), so a comment citing
+  // its private path would point at a file this tree does not have.
+  { name: "methodology doc path", re: /\bdocs\/PBS_METHODOLOGY\.md\b/g, to: () => "METHODOLOGY.md" },
   { name: "owner-ruling adjective", re: /\bDavid-(approved|ruled|reviewed|greenlit)\b/g, to: (_m, w) => `owner-${w}` },
   { name: "owner card", re: /\bDavid card\b/g, to: () => "owner card" },
   {

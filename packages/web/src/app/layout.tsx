@@ -37,9 +37,9 @@ const SITE_LD = {
       url: SITE_URL,
       description:
         "A free, donation-funded civic-accountability platform that gives every U.S. billionaire a giving score — how much of their wealth they actually give — with every claim source-linked.",
-      // No `sameAs` while the repo is private. It pointed at a 404, which asserted
-      // a profile we do not have to every crawler that reads this graph. Restore it
-      // in the same commit that makes the repository public.
+      // The public source repository (AGPL-3.0). This was dropped while the repo was
+      // private because it asserted a 404 profile to every crawler reading the graph.
+      sameAs: ["https://github.com/u00dxk2/billionaire-army-source"],
     },
     {
       "@type": "WebSite",
@@ -77,16 +77,18 @@ export default function RootLayout({
             </a>
             <a href="/terms">Terms</a>
             <a href="/privacy">Privacy</a>
-            {/* No "Source on GitHub" link while the repository is private — it
-                404'd on every page of the site. The commitment is kept in the
-                footer text below instead of as a link that cannot be followed;
-                restore the link in the same commit that makes the repo public. */}
+            <a
+              href="https://github.com/u00dxk2/billionaire-army-source"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Source on GitHub &#8599;
+            </a>
           </nav>
           <p className="footer-meta">
             A Skylark Creations project — free and donation-funded. No ads, no
             premium tier. Every claim is source-linked; every score is open. The
-            source isn&apos;t public yet; it goes up under an open licence before
-            launch.
+            source is public under the AGPL-3.0 licence.
           </p>
         </footer>
       </body>

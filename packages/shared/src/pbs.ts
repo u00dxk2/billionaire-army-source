@@ -7,7 +7,7 @@
  * controversyInv=0.7, approval=0.5) that crushed every score to ~0.5 — and it
  * stored 0–1 while the grade bands checked 0–100, so everyone graded F. v2 drops
  * the dead weights and scores from two real, populated signals, reweighted to
- * sum to 100%. See docs/PBS_METHODOLOGY.md for the full rationale + limitations.
+ * sum to 100%. See METHODOLOGY.md for the full rationale + limitations.
  */
 
 import type { PbsFeatures } from "./schemas";

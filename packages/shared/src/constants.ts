@@ -1,6 +1,6 @@
 // PBS component weights live in ./pbs.ts (PBS_WEIGHTS) alongside the scoring
 // logic. v1's five-weight block (three of them hardcoded placeholders) was
-// removed when v2 shipped — see ./pbs.ts and docs/PBS_METHODOLOGY.md.
+// removed when v2 shipped — see ./pbs.ts and METHODOLOGY.md.
 
 // Verification levels for progress reports
 export const VERIFICATION_LEVELS = {

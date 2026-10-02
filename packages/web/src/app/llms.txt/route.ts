@@ -89,8 +89,8 @@ ${SITE_URL}/sitemap.xml
 
 ## Notes
 
-- Free, donation-funded, no ads, no premium tier. The source is not public yet;
-  it goes up under an open licence before launch.
+- Free, donation-funded, no ads, no premium tier. The source is public under the
+  AGPL-3.0 licence: https://github.com/u00dxk2/billionaire-army-source
 - Estimates are labeled as estimates; private/personal-security details are never
   published. U.S.-connected billionaires only.
 `;

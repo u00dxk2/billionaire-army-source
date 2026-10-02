@@ -125,12 +125,13 @@ idempotent, so re-running it is safe.
 
 `npm run check:rls` verifies the result. It needs `NEXT_PUBLIC_SUPABASE_URL`
 and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and tries to read sample tables with the
-anon key over the REST API. With `DATABASE_URL` set it also lists any table
-without row-level security, any grant still held by `anon`, `authenticated` or
-`PUBLIC`, and any default privilege that would re-grant a new table. It exits 0
-when access is denied and 1 when anything is exposed. Run it after every
-migration: a new table added by a migration does not get row-level security
-until you enable it.
+anon key over the REST API. With `DATABASE_URL`, the checker checks
+public-schema table RLS, selected explicit role grants, and schema-specific
+table defaults granting access to `anon` or `authenticated`; it does not
+comprehensively verify `PUBLIC` or global default grants. It exits 0 when
+every check it runs finds access denied and 1 when one finds an exposure. Run
+it after every migration: a new table added by a migration does not get
+row-level security until you enable it.
 
 Checks that need no database or keys:
 

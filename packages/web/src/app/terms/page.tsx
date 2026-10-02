@@ -410,7 +410,10 @@ export default function TermsPage() {
         names, logos, and original content, is owned by us or our licensors
         and is protected by law. Except as expressly allowed by these Terms,
         you may not copy, modify, distribute, sell, lease, display, perform,
-        or create derivative works from the Service.
+        or create derivative works from the Service. The source code we
+        publish at github.com/u00dxk2/billionaire-army-source is licensed
+        under the GNU Affero General Public License v3.0; nothing in these
+        Terms limits the rights that licence gives you in that code.
       </p>
       <p>
         Public records, third-party articles, source materials, names,
