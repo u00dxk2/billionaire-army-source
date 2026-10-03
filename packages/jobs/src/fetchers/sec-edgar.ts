@@ -22,6 +22,7 @@
 import { createDb, persons, personFacts } from "@ba/db";
 import { eq, and } from "drizzle-orm";
 import { isMain } from "../is-main";
+import { refreshRunExitCode, assertHttpOk, requireArray } from "./refresh-run-verdict";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) { console.error("DATABASE_URL is required"); process.exit(1); }
@@ -46,11 +47,13 @@ async function eftsSearch(fullName: string): Promise<EftsResult> {
   const url = `https://efts.sec.gov/LATEST/search-index?q=%22${encodeURIComponent(fullName)}%22&dateRange=custom&startdt=2010-01-01&enddt=${endDate}`;
 
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) return { totalHits: 0, personalCik: null, companies: [] };
+  // A refused search (403/429/5xx) is an ERROR, not "no mentions": it used to return totalHits 0,
+  // which printed "No EDGAR mentions" and counted as a clean skip.
+  assertHttpOk(res, "SEC EFTS");
 
   const data: any = await res.json();
+  const hits = requireArray(data?.hits?.hits, "SEC EFTS").map((h: any) => h._source);
   const totalHits: number = data.hits?.total?.value ?? data.hits?.total ?? 0;
-  const hits = (data.hits?.hits || []).map((h: any) => h._source);
 
   // Collect CIK -> metadata
   const cikMap = new Map<string, { name: string; hitCount: number; forms: Set<string> }>();
@@ -136,11 +139,14 @@ async function getSubmissions(cik: string): Promise<SubmissionsResult | null> {
   const url = `https://data.sec.gov/submissions/CIK${paddedCik}.json`;
 
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) return null;
+  // A refused or malformed submissions read used to return null, and the caller then REPLACED the
+  // person's complete fact with one missing every filing field and counted it fetched (Codex
+  // finding 1). It throws now, before the caller's delete.
+  assertHttpOk(res, "SEC submissions");
 
   const data: any = await res.json();
   const recent = data.filings?.recent || {};
-  const forms: string[] = recent.form || [];
+  const forms = requireArray(recent.form, "SEC submissions") as string[];
   const filingDates: string[] = recent.filingDate || [];
   const primaryDocs: string[] = recent.primaryDocument || [];
   const primaryDocDescs: string[] = recent.primaryDocDescription || [];
@@ -185,6 +191,7 @@ async function importAll() {
 
   let fetched = 0;
   let skipped = 0;
+  let errors = 0;
 
   for (const person of allPersons) {
     console.log(`  ${person.name}...`);
@@ -208,7 +215,11 @@ async function importAll() {
         // full-text-only "Meijer -> Rivulet" match) so a wrong entity doesn't
         // persist across re-runs once the tightened matcher stops producing it.
         await db.delete(personFacts).where(
-          and(eq(personFacts.personId, person.id), eq(personFacts.factKey, "sec_filings"))
+          and(
+            eq(personFacts.personId, person.id),
+            eq(personFacts.factKey, "sec_filings"),
+            eq(personFacts.sourceType, "sec_edgar"),
+          )
         );
         console.log(`    ${efts.totalHits} mentions but no usable CIK (stale fact cleared)`);
         skipped++;
@@ -249,20 +260,29 @@ async function importAll() {
         ? `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${efts.personalCik}&type=&dateb=&owner=include&count=40`
         : `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${bestCik}&type=&dateb=&owner=include&count=40`;
 
-      // Upsert: delete old sec_filings fact, insert new
-      await db.delete(personFacts).where(
-        and(eq(personFacts.personId, person.id), eq(personFacts.factKey, "sec_filings"))
-      );
+      // Upsert: delete old sec_filings fact, insert new — in ONE transaction, so a failed insert
+      // cannot leave the person with no fact (Codex finding 6). Only a row THIS fetcher wrote is
+      // deleted: a row under the same key from another source survives (0 existed on 2026-10-02).
+      // It is not given display precedence; that is R-087's to settle before arming.
+      await db.transaction(async (tx) => {
+        await tx.delete(personFacts).where(
+          and(
+            eq(personFacts.personId, person.id),
+            eq(personFacts.factKey, "sec_filings"),
+            eq(personFacts.sourceType, "sec_edgar"),
+          )
+        );
 
-      await db.insert(personFacts).values({
-        personId: person.id,
-        factType: "business",
-        factKey: "sec_filings",
-        factValue,
-        sourceUrl,
-        sourceType: "sec_edgar",
-        retrievedAt: now,
-        estimationMethod: "sec_derived",
+        await tx.insert(personFacts).values({
+          personId: person.id,
+          factType: "business",
+          factKey: "sec_filings",
+          factValue,
+          sourceUrl,
+          sourceType: "sec_edgar",
+          retrievedAt: now,
+          estimationMethod: "sec_derived",
+        });
       });
 
       const label = efts.personalCik ? `personal CIK ${efts.personalCik}` : `via ${topCompanies[0]?.name || bestCik}`;
@@ -273,12 +293,18 @@ async function importAll() {
       // EDGAR rate limit: 10 req/sec. We made 2 requests, wait 250ms.
       await new Promise(r => setTimeout(r, 250));
     } catch (err) {
+      // COUNTED, not just printed — the same survived-the-continue shape fec.ts fixed.
+      errors++;
       console.error(`    Error: ${err instanceof Error ? err.message : err}`);
+      // A failed request still counts against EDGAR's 10 req/s; don't hammer it on a refusal.
+      await new Promise(r => setTimeout(r, 250));
     }
   }
 
-  console.log(`\nSEC EDGAR import complete: ${fetched} enriched, ${skipped} skipped`);
-  process.exit(0);
+  console.log(`\nSEC EDGAR import complete: ${fetched} enriched, ${skipped} skipped, ${errors} errored`);
+  if (errors > 0) console.log(`  ⚠ ${errors} person(s) errored and kept whatever fact they already had — this run is PARTIAL.`);
+  // Red on a partial or empty run, so a scheduled run cannot conclude "success" over one.
+  process.exit(refreshRunExitCode({ attempted: fetched + skipped + errors, errors }));
 }
 
 // Guarded: these scripts mutate prod, so importing this file must not RUN it.

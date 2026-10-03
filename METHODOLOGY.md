@@ -12,7 +12,7 @@ The scorer derives its inputs from stored facts and person fields, excluding sum
 
 The batch scorer computes and stores a score for each person it processes, whether or not giving data exists. That score is not served for everyone. A person who holds neither a `total_giving` fact nor a `foundation_990s` fact is **not graded** (`gradeStatus()` in `packages/shared/src/pbs-evidence.ts`). For that person the API routes that serve a score return none (`packages/api/src/grade-status.ts`), and the pages print "Not graded" in place of a letter and a number. Among the entries the leaderboard returns, not-graded people follow graded people, ordered by name and without a rank.
 
-The reason is in the formula below. When extracted annual giving is zero, philanthropy equals its pledge term, so before rounding the score is `9.75 × pledge + 35 × min((distinct fact types + 1 if a profile image exists) ÷ 8, 1)`: a pledge flag plus a measure of how much data has been collected about the person. A Giving Pledge badge or fact alone does not make a person graded. A person who holds a giving fact that reports no giving stays graded.
+The reason is in the formula below. When extracted annual giving is zero, philanthropy equals its pledge term, so before rounding the score is `9.75 × pledge + 35 × min((distinct counted fact types + 1 if a profile image exists) ÷ 8, 1)`: a pledge flag plus a measure of how much data has been collected about the person. A Giving Pledge badge or fact alone does not make a person graded. A person who holds a giving fact that reports no giving stays graded.
 
 Feed cards follow the same rule. A card that tags a not-graded person carries no score, and if its stored summary mentions the score by name the summary is not served (`withholdScoreProse()` in `packages/shared/src/score-vocabulary.ts`). That check looks for the score's name; it does not detect a grade stated without it.
 
@@ -33,7 +33,7 @@ v2 drops the constant components, scores from the two signals that have data beh
 | Documented direct giving (curated, cited list) | 7 curated entries | philanthropy — annualized; generosity uses the larger of this and the 990 figure |
 | Foundation 990 assets | 74% | not a numeric input to philanthropy (a foundation fact still adds a fact type to transparency) |
 | The Giving Pledge | ~10% (112, after import) | philanthropy, at 15% of that component |
-| Distinct fact types held, plus 1 for a profile image | spans 1–8 | transparency |
+| Distinct counted fact types held, plus 1 for a profile image | counted per person; the term reaches its maximum at 8 | transparency |
 | Goal adoption, controversy, community votes | none | not scored |
 
 ## The formula
@@ -57,9 +57,11 @@ The three terms:
 
 ### Transparency (35%)
 
-`clamp((distinct fact types + 1 if a profile image exists) / 8, 0, 1)`.
+`clamp((distinct counted fact types + 1 if a profile image exists) / 8, 0, 1)`.
 
-This counts distinct fact **types**, not distinct sources: two facts of different types taken from the same URL count twice, and a generated summary counts as a type. Facts holding quarantined summary text are excluded. Because the count depends on what the pipeline has collected, transparency partly measures data coverage, not only the person's own disclosure.
+This counts distinct fact **types**, not distinct sources: two counted facts of different types taken from the same URL count twice, and a generated summary counts as a type. Facts holding quarantined summary text are excluded.
+
+**An FEC contributions fact matched by name alone is not counted.** The fetcher uses contributor name as its only person-identifying criterion, with no employer, occupation or state check (`packages/jobs/src/fetchers/fec.ts`), so a stored record may include contributions from a different person with the same name. When fact types are counted, a `fec_contributions` fact is skipped unless its value carries its own `employerVerifiedCount` that is a whole number of at least 1; when the fact also has a numeric `count`, the verified number must not exceed it (`fecFactCountsTowardScore()` in `packages/shared/src/fec-attribution.ts`, applied in `packages/jobs/src/pbs-signals.ts`). That field is meant to record how many of the fact's contributions also matched the person's own company; the check trusts the stored number and does not verify the match itself. No production ingestion code here populates the field (only test fixtures set it), so a fact written by the current FEC fetcher does not count. The skip affects only this count. The profile still shows the record with a name-match warning, unless `isFecRecordImpossible()` withholds it because its earliest contribution predates the person's 18th year. Because the count depends on what the pipeline has collected, transparency partly measures data coverage, not only the person's own disclosure.
 
 ## Grade bands
 
@@ -71,7 +73,7 @@ This counts distinct fact **types**, not distinct sources: two facts of differen
 | D | ≥ 15 | 386 (34%) |
 | F | < 15 | 158 (14%) |
 
-The bands were set against that snapshot's score distribution. A grade depends on all four inputs (generosity, scale, pledge and coverage), not on generosity alone.
+The bands were set against that snapshot's score distribution. A later production snapshot, 2026-10-03, taken after name-only FEC facts stopped counting and covering only the 736 graded people: A 41, B 99, C 245, D 331, F 20. A grade depends on all four inputs (generosity, scale, pledge and coverage), not on generosity alone.
 
 ## The curated direct-giving list
 

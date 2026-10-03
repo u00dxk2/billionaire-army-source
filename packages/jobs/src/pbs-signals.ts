@@ -10,7 +10,14 @@ import type { PbsSignals } from "@ba/shared";
 // API's display path and the PBS scorer divide the same numbers off ONE copy —
 // the accountabilityScore rule. Re-exported here so the three scoring call
 // sites (score-all, score-preview, worker) import unchanged.
-import { parseNetWorth, directGivingAnnualFromFact, foundationTotals, SUMMARY_QUARANTINE_FACT_KEY } from "@ba/shared";
+import {
+  parseNetWorth,
+  directGivingAnnualFromFact,
+  foundationTotals,
+  SUMMARY_QUARANTINE_FACT_KEY,
+  FEC_CONTRIBUTIONS_FACT_KEY,
+  fecFactCountsTowardScore,
+} from "@ba/shared";
 
 export { parseNetWorth, directGivingAnnualFromFact };
 
@@ -48,7 +55,14 @@ export function extractPbsSignals(person: PersonRow, allFacts: FactRow[]): PbsSi
   // would raise transparency (sourceCount) for exactly the people whose summary was caught WRONG.
   const facts = allFacts.filter((f) => f.factKey !== SUMMARY_QUARANTINE_FACT_KEY);
   const badges = (person.badges as Record<string, boolean>) ?? {};
+  // B-037 (the owner, card d143c535): an FEC record matched by name alone is not counted as a source.
+  // Only the SOURCE COUNT skips it (`countedTypes`); every other signal reads the full fact list.
   const types = new Set(facts.map((f) => f.factType));
+  const countedTypes = new Set(
+    facts
+      .filter((f) => f.factKey !== FEC_CONTRIBUTIONS_FACT_KEY || fecFactCountsTowardScore(f.factValue))
+      .map((f) => f.factType),
+  );
   const keys = new Set(facts.map((f) => f.factKey));
   const hasImage = Array.isArray(person.images) && person.images.length > 0;
 
@@ -71,7 +85,7 @@ export function extractPbsSignals(person: PersonRow, allFacts: FactRow[]): PbsSi
   const directGivingAnnual = directFact ? directGivingAnnualFromFact(directFact.factValue) : 0;
 
   // distinct public-accountability sources = distinct fact types (+ a profile image)
-  const sourceCount = types.size + (hasImage ? 1 : 0);
+  const sourceCount = countedTypes.size + (hasImage ? 1 : 0);
 
   return { netWorth, foundationAssets, foundationGiving, directGivingAnnual, givingPledge, sourceCount };
 }

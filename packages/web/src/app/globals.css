@@ -37,6 +37,12 @@
   box-sizing: border-box;
 }
 
+/* In-page anchors (e.g. the "Not graded" badge -> #score-breakdown) must land BELOW the sticky
+   .header, not under it. One value covers both header heights (56px desktop, 50px phone) plus air. */
+html {
+  scroll-padding-top: 72px;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
@@ -3252,4 +3258,23 @@ a.feed-card-source-link:hover {
 
 .detail-miss p {
   margin-bottom: 0.75rem;
+}
+
+/* A small inline link that is someone's only route to us (e.g. "Tell us" on the giving-score
+   section) gets a thumb-sized (44px) tap area on touch screens. The area is an invisible
+   ::after, so the sentence keeps its exact line flow; padding on the link itself grew its line
+   box and opened a visible gap mid-sentence. Pointer devices keep the plain inline link. */
+@media (pointer: coarse) {
+  .tap-link {
+    position: relative;
+  }
+  .tap-link::after {
+    content: "";
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
 }

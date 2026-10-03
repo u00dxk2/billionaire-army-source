@@ -15,6 +15,7 @@
 import { createDb, persons, personFacts } from "@ba/db";
 import { eq, and, gte } from "drizzle-orm";
 import { isMain } from "../is-main";
+import { refreshRunExitCode, requireArray } from "./refresh-run-verdict";
 
 const FEC_API = "https://api.open.fec.gov/v1";
 
@@ -70,7 +71,8 @@ async function fetchContributions(
   // never as zero. (R-077, 2026-08-29)
   const reportedTotal =
     typeof data?.pagination?.count === "number" ? data.pagination.count : null;
-  return { results: (data.results || []) as FecContribution[], reportedTotal };
+  // A 200 without a `results` array is an error, never "no contributions" (Codex finding 2).
+  return { results: requireArray(data?.results, "FEC schedule_a") as FecContribution[], reportedTotal };
 }
 
 function summarizeContributions(contributions: FecContribution[]): {
@@ -152,8 +154,9 @@ async function importAll() {
       if (contributions.length === 0) {
         console.log(`    No contributions found`);
         skipped++;
-        // Rate limit: be polite
-        await new Promise((r) => setTimeout(r, 500));
+        // An empty answer still spent a request: the same 3800ms as every other path, or a run of
+        // empties outpaces api.data.gov's 1,000/hour (it was 500ms — Codex finding 5).
+        await new Promise((r) => setTimeout(r, 3800));
         continue;
       }
 
@@ -163,23 +166,32 @@ async function importAll() {
       };
       const now = new Date();
 
-      // Delete old FEC fact before inserting fresh data
-      await db.delete(personFacts).where(
-        and(eq(personFacts.personId, person.id), eq(personFacts.factKey, "fec_contributions"))
-      );
+      // Replace the old FEC fact in ONE transaction, so a failed insert cannot leave the person with
+      // no fact (Codex finding 6). Only a row THIS fetcher wrote is deleted: a row under the same key
+      // from another source survives (0 existed on 2026-10-02). It is not given display precedence;
+      // that is R-087's to settle before arming.
+      await db.transaction(async (tx) => {
+        await tx.delete(personFacts).where(
+          and(
+            eq(personFacts.personId, person.id),
+            eq(personFacts.factKey, "fec_contributions"),
+            eq(personFacts.sourceType, "fec"),
+          )
+        );
 
-      await db
-        .insert(personFacts)
-        .values({
-          personId: person.id,
-          factType: "political",
-          factKey: "fec_contributions",
-          factValue: summary,
-          sourceUrl: `https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=${encodeURIComponent(person.name)}`,
-          sourceType: "fec",
-          retrievedAt: now,
-          estimationMethod: "fec",
-        });
+        await tx
+          .insert(personFacts)
+          .values({
+            personId: person.id,
+            factType: "political",
+            factKey: "fec_contributions",
+            factValue: summary,
+            sourceUrl: `https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=${encodeURIComponent(person.name)}`,
+            sourceType: "fec",
+            retrievedAt: now,
+            estimationMethod: "fec",
+          });
+      });
 
       const formatted = summary.totalAmount >= 1e6
         ? `$${(summary.totalAmount / 1e6).toFixed(1)}M`
@@ -211,7 +223,8 @@ async function importAll() {
     console.log(`  ⚠ ${errors} person(s) errored and kept whatever fact they already had — this run is PARTIAL.`);
     console.log(`  ⚠ ${fetched + skipped + errors} of ${allPersons.length} accounted for; a rate-limit tail looks exactly like this.`);
   }
-  process.exit(0);
+  // Red on a partial or empty run, so a scheduled run cannot conclude "success" over one.
+  process.exit(refreshRunExitCode({ attempted: fetched + skipped + errors, errors }));
 }
 
 // Guarded: these scripts mutate prod, so importing this file must not RUN it.

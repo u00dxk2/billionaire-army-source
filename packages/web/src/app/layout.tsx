@@ -8,11 +8,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Billionaire Army — civic accountability for U.S. billionaires",
   description:
-    "The public sets the goals; U.S. billionaires get scored on what they actually give — every claim source-linked, every score open. A free, donation-funded Skylark Creations project.",
+    "The public sets the goals; U.S. billionaires get scored on what they actually give where we hold a record of their giving, and marked \"Not graded\" where we hold none — every claim source-linked, every score open. A free, donation-funded Skylark Creations project.",
   openGraph: {
     title: "Billionaire Army",
     description:
-      "U.S. billionaires scored on what they actually give — every claim source-linked, every score open.",
+      "U.S. billionaires scored on what they actually give where we hold a record of their giving, \"Not graded\" where we hold none — every claim source-linked, every score open.",
     siteName: "Billionaire Army",
     type: "website",
   },
@@ -36,7 +36,7 @@ const SITE_LD = {
       name: "Billionaire Army",
       url: SITE_URL,
       description:
-        "A free, donation-funded civic-accountability platform that gives every U.S. billionaire a giving score — how much of their wealth they actually give — with every claim source-linked.",
+        "A free, donation-funded civic-accountability platform that gives U.S. billionaires a giving score — how much of their wealth they actually give — where we hold a record of their giving, and says \"Not graded\" where we hold none, with every claim source-linked.",
       // The public source repository (AGPL-3.0). This was dropped while the repo was
       // private because it asserted a 404 profile to every crawler reading the graph.
       sameAs: ["https://github.com/u00dxk2/billionaire-army-source"],

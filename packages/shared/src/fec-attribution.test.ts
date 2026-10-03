@@ -1,8 +1,38 @@
 import { describe, it, test } from "node:test";
 import assert from "node:assert/strict";
-import { isFecRecordImpossible, isImplausibleBirthYear, windowTwoDigitYear, withholdPoliticalProse, MIN_CONTRIBUTOR_AGE } from "./fec-attribution";
+import { isFecRecordImpossible, isImplausibleBirthYear, windowTwoDigitYear, withholdPoliticalProse, MIN_CONTRIBUTOR_AGE, fecFactCountsTowardScore } from "./fec-attribution";
 
 const NOW = new Date("2026-08-30T00:00:00Z");
+
+describe("fecFactCountsTowardScore", () => {
+  it("does not count the fact fec.ts stores today (aggregates, no employer verdict)", () => {
+    assert.equal(fecFactCountsTowardScore({ totalAmount: 128108, count: 48, dateRange: "1979-07-23 to 2025-09-04" }), false);
+  });
+
+  it("counts once at least one record matched the person's own company", () => {
+    assert.equal(fecFactCountsTowardScore({ count: 100, employerVerifiedCount: 1 }), true);
+    assert.equal(fecFactCountsTowardScore({ count: 100, employerVerifiedCount: 42 }), true);
+  });
+
+  it("drops on doubt: zero, a non-number or a malformed value is name-only", () => {
+    for (const bad of [0, -1, 1.5, "3", true, null, undefined, Number.NaN, Infinity, [1]]) {
+      assert.equal(fecFactCountsTowardScore({ employerVerifiedCount: bad }), false, String(bad));
+    }
+    for (const bad of [null, undefined, "x", 3, []]) assert.equal(fecFactCountsTowardScore(bad), false, String(bad));
+  });
+
+  it("refuses a broken row: more verified than records, an unsafe integer, an array, an inherited field", () => {
+    assert.equal(fecFactCountsTowardScore({ count: 1, employerVerifiedCount: 2 }), false);
+    assert.equal(fecFactCountsTowardScore({ count: 0, employerVerifiedCount: 1 }), false);
+    assert.equal(fecFactCountsTowardScore({ employerVerifiedCount: 1e100 }), false);
+    assert.equal(fecFactCountsTowardScore(Object.assign([], { employerVerifiedCount: 1 })), false);
+    assert.equal(fecFactCountsTowardScore(Object.create({ employerVerifiedCount: 1 })), false);
+    // Control: the same number with a consistent count is accepted.
+    assert.equal(fecFactCountsTowardScore({ count: 2, employerVerifiedCount: 2 }), true);
+    // `count` is optional: a verified fact that carries no count is still accepted (Codex r2 mutant).
+    assert.equal(fecFactCountsTowardScore({ employerVerifiedCount: 1 }), true);
+  });
+});
 
 describe("isFecRecordImpossible", () => {
   it("flags the live case that found B-037", () => {

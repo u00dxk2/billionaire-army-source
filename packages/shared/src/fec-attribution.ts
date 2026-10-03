@@ -79,6 +79,43 @@ export function isFecRecordImpossible(
   return earliest < usableBirthYear + MIN_CONTRIBUTOR_AGE;
 }
 
+/** The one fact key `fec.ts` writes; every row under it was matched by `contributor_name` alone. */
+export const FEC_CONTRIBUTIONS_FACT_KEY = "fec_contributions";
+
+/**
+ * Does this stored FEC fact count toward the giving score?
+ *
+ * The owner, card d143c535 (2026-10-03T02:14Z, verbatim): "Stop counting name-only donation records
+ * toward the giving score now, and count a record again once it matches the person's own company."
+ *
+ * TRUE only when the fact says at least one of its records named the person's own company:
+ * `employerVerifiedCount`, a whole number of 1 or more and no larger than the fact's own `count`
+ * when it has one. That field is the CONTRACT for B-037 step 1
+ * (the fetcher storing a per-record employer verdict); nothing writes it yet, so on 2026-10-03 this
+ * is false for all 949 stored facts. Anything else (absent, a string, a fraction, zero, a missing
+ * value) is name-only: it drops on doubt, because counting a stranger's donations raises a named
+ * person's published grade.
+ *
+ * The score counts fact TYPES, not records, so the unit here is the fact: one verified record puts
+ * the political type back. It says nothing about what the page SHOWS; that is the caveat and
+ * `isFecRecordImpossible`.
+ *
+ * CONTRACT FOR THE WRITER: `employerVerifiedCount` counts verified records WITHIN the same set the
+ * fact's `count` describes (today the 100 most recent under the name). A match counted over a
+ * larger history needs its own field, or it is refused here as a broken row.
+ *
+ * CEILING: this reads a stored number. It cannot tell whether the writer's company match was right;
+ * that is the fetcher's to prove (B-037 steps 1-2).
+ */
+export function fecFactCountsTowardScore(factValue: unknown): boolean {
+  if (typeof factValue !== "object" || factValue === null || Array.isArray(factValue)) return false;
+  if (!Object.hasOwn(factValue, "employerVerifiedCount")) return false;
+  const { employerVerifiedCount: verified, count } = factValue as { employerVerifiedCount?: unknown; count?: unknown };
+  if (typeof verified !== "number" || !Number.isSafeInteger(verified) || verified < 1) return false;
+  // More verified records than records is a broken row, not a match.
+  return typeof count !== "number" || verified <= count;
+}
+
 /**
  * Turn a TWO-DIGIT year from a scraped source into a real one.
  *

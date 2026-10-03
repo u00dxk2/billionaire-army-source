@@ -25,6 +25,7 @@ import {
   NOT_GRADED_REASON,
 } from "@ba/shared";
 import { SITE_URL } from "@/lib/site";
+import { FEC_NAME_MATCH_CAVEAT } from "@/lib/fec-match-caveat";
 import { formatCurrency } from "@/lib/format";
 import { jsonLdString } from "@/lib/json-ld";
 import { nteeLabel } from "@/lib/ntee";
@@ -311,8 +312,7 @@ function PoliticalSection({
           name-only matching is a property of how the data is gathered. Stating it is the same
           honest-and-imprecise order the page-size cap notice follows. */}
       <p className="profile-section-note">
-        <strong>Matched by name only.</strong> These are the donations the FEC lists under this
-        person&rsquo;s name — so a different person with the same name can show up here too.
+        <strong>Matched by name only.</strong> {FEC_NAME_MATCH_CAVEAT}
       </p>
 
       <div style={{ marginTop: "0.75rem" }}>
@@ -366,7 +366,7 @@ function PhilanthropySection({ fact }: { fact: Fact }) {
         Foundations are matched to a person by <strong>name</strong>, not by trustee records — so a
         same-surname family foundation can land here in error. Every entity below links to its full IRS
         filing; if one doesn&rsquo;t belong, tell us at{" "}
-        <a href="mailto:hello@skylarkcreations.com" className="source-link">hello@skylarkcreations.com</a>{" "}
+        <a href="mailto:hello@skylarkcreations.com" className="source-link tap-link">hello@skylarkcreations.com</a>{" "}
         and we&rsquo;ll pull it.
       </p>
       <div className="profile-stat-row">
@@ -841,6 +841,11 @@ function ProfileSummary({
             </p>
           )}
           <p className="summary-text">{renderText(content!)}</p>
+          {/* B-037 / the owner 2026-10-02: the paragraph restates a name-matched FEC record, so it says
+              so in the same words as the record below (FEC_NAME_MATCH_CAVEAT, one source). */}
+          {key === "political" && politicalRecordRefreshedAt != null && (
+            <p className="profile-section-note">{FEC_NAME_MATCH_CAVEAT}</p>
+          )}
         </div>
       ))}
       {data.generatedAt && (
@@ -876,8 +881,8 @@ const SCORE_COMPONENTS: {
     label: "Transparency",
     weight: 35,
     description:
-      "How much sourced, public accountability data exists — net worth, political contributions, SEC filings, foundation 990s, news coverage, and a verified profile. More public disclosure scores higher.",
-    sources: "FEC, SEC EDGAR, ProPublica 990s, GDELT / NewsAPI, Wikidata",
+      "How much sourced, public accountability data exists — net worth, SEC filings, foundation 990s, news coverage, and a profile photo. Each further kind of record scores higher, up to eight. Political donation records matched to a person by name alone are not counted: they may belong to someone else with the same name.",
+    sources: "SEC EDGAR, ProPublica 990s, GDELT / NewsAPI, Wikidata",
   },
 ];
 
@@ -981,7 +986,7 @@ function ScoreBreakdown({
                   it holds this score down. Political contributions are not charitable giving and
                   never count here, so this line can sit beside a large FEC figure without either
                   being wrong. Know of a gift we are missing?{" "}
-                  <a href="mailto:hello@skylarkcreations.com">Tell us</a> and we will source it.
+                  <a href="mailto:hello@skylarkcreations.com" className="tap-link">Tell us</a> and we will source it.
                 </p>
               )}
             </div>
@@ -1023,9 +1028,12 @@ function NotGradedSection({ givingPledge }: { givingPledge: boolean }) {
       <SectionHeader title="Giving score" icon="SCORE" />
       <p className="profile-not-graded">{NOT_GRADED_LABEL} — {NOT_GRADED_REASON}</p>
       <p className="score-formula-intro">
-        We hold no charitable giving record for this person: no foundation filing we can tie to them
-        and no documented direct gifts. Without one, a score would only measure how much data we
-        happen to have, so we do not give one. That says nothing about how much they give.
+        We hold no charitable giving record for this person that we can count toward a score: no
+        foundation filing we can tie to them and no sourced record of their direct giving. A gift
+        reported elsewhere on this page, in the news or the summary, is not one we have recorded as
+        a giving record yet. Without a record, a score would reflect how much data we hold about them
+        and any Giving Pledge signature rather than recorded giving, so we do not give one. That says
+        nothing about how much they give.
       </p>
       {givingPledge && (
         <p className="score-formula-intro">
@@ -1035,7 +1043,7 @@ function NotGradedSection({ givingPledge }: { givingPledge: boolean }) {
       )}
       <p className="score-formula-intro">
         Know of a gift we are missing?{" "}
-        <a href="mailto:hello@skylarkcreations.com">Tell us</a> and we will source it.
+        <a href="mailto:hello@skylarkcreations.com" className="tap-link">Tell us</a> and we will source it.
       </p>
     </div>
   );

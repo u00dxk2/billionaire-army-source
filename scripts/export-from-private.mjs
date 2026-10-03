@@ -123,6 +123,7 @@ const JOBS_EXCLUDE = [
 const TESTS_NEEDING_EXCLUDED = [
   "packages/jobs/src/fetchers/feed-curator-currency-wireup.test.ts", // reads probe-passc-context.ts
   "packages/jobs/src/fetchers/feed-curator-passed-over-wireup.test.ts", // reads scripts/read-curator-run.mjs + read-passed-over-composition.mjs
+  "packages/jobs/src/fetchers/refresh-run-verdict.test.ts", // reads .github/workflows/refresh-{sec,fec}.yml, which are not exported
 ];
 
 /**
@@ -327,7 +328,7 @@ const OVERRIDES = {
     mode: "head",
     file: "METHODOLOGY.head.md",
     keepFrom: "## Where it lives in code",
-    pin: "294d4e964dc48867eca89e7c055fdd8dc7325bc824cda9451556dc97331bc4da",
+    pin: "fee3485f2297a922ed6e21865554d3e9139f77ec10222906df387e8a0f4f6bc9",
     why: "claims narrowed to what the code does; production numbers labelled as dated snapshots",
   },
 };

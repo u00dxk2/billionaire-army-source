@@ -152,8 +152,8 @@ export default async function Home({
         <p className="hero-receipt-sub">
           You bring the argument. We bring the receipt —{" "}
           {personCount > 0 ? personCount.toLocaleString() : "every indexed"} American
-          billionaires, each scored on how much of their wealth they actually give away.
-          Open formula, every figure linked to its filing.
+          billionaires, scored on how much of their wealth they actually give away
+          wherever we hold a record of their giving. Open formula, every figure linked to its filing.
         </p>
 
         {/* Conditional because the FEED can be thin or the API down — not because there

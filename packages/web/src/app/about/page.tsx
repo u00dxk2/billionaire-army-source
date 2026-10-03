@@ -128,6 +128,17 @@ export default function AboutPage() {
         whole site rests on not overstating; it would be strange to start on
         this page.
       </p>
+      {/* B-037, the owner on card d143c535 (2026-10-03): "Stop counting name-only donation records
+          toward the giving score now, and count a record again once it matches the person's own
+          company. Say so on the methodology page." The rule is fecFactCountsTowardScore()
+          (@ba/shared). */}
+      <p>
+        One thing the transparency part leaves out: political donation records
+        matched by name alone. That is how we match federal donation records to a
+        person today, so a record may belong to somebody else with the same name. A
+        record like that does not count toward anyone&apos;s score. It will count
+        again once it also matches the person&apos;s own company.
+      </p>
       <p>
         The score also doesn&apos;t measure whether someone is a good person,
         whether their company is useful, whether they pay their taxes, or how

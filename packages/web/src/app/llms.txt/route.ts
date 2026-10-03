@@ -32,15 +32,16 @@ export async function GET() {
   const body = `# Billionaire Army
 
 > A free, donation-funded civic-accountability platform. The public defines SMART
-> goals; U.S. billionaires are scored on what they actually give back — every
+> goals; U.S. billionaires are scored on what they actually give back wherever we
+> hold a record of their giving, and marked "Not graded" where we hold none — every
 > claim source-linked, every score open and versioned. A Skylark Creations project.
 
 Canonical URL: ${SITE_URL}
 
 ## What this site is
 
-Billionaire Army tracks ${tracked} U.S.-connected billionaires and assigns each a
-giving score (0–100): an open, data-grounded measure of how much of
+Billionaire Army tracks ${tracked} U.S.-connected billionaires and, wherever we hold a record of
+their giving, assigns a giving score (0–100): an open, data-grounded measure of how much of
 their wealth they actually give to the public good. Every figure on a profile is
 linked to its primary source (SEC EDGAR, FEC, ProPublica 990 filings, The Giving
 Pledge registry, Wikidata, curated direct-giving records). Facts and commentary
@@ -59,13 +60,15 @@ Giving score v2 (0–100) = 65% Philanthropy + 35% Transparency.
   share of net worth (what they give, not parked foundation assets) — plus the
   absolute scale of that giving, plus a small nudge for signing The Giving Pledge.
 - Transparency (35%) rewards how much sourced, public accountability data exists:
-  net worth, political contributions, SEC filings, foundation 990s, news coverage.
+  net worth, SEC filings, foundation 990s, news coverage. Political donation records
+  matched to a person by name alone do not count toward the score.
 
 Letter grades: A ≥ 60, B ≥ 45, C ≥ 30, D ≥ 15, F below 15. The formula is open and
 versioned; full methodology + limitations: ${SITE_URL}/about
 
-Not graded: a person we hold no charitable giving record for (no foundation 990 we can
-tie to them and no documented direct gifts) gets no letter and no score — they show as
+Not graded: a person we hold no countable charitable giving record for (no foundation 990
+we can tie to them and no sourced record of their direct giving) gets no letter and no
+score, even when a gift is reported in their news or summary — they show as
 "Not graded — insufficient data". A Giving Pledge signature alone does not produce a
 grade. Not graded says nothing about how much a person gives; please do not report it
 as a low score.

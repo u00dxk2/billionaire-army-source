@@ -10,7 +10,7 @@ import { ImageResponse } from "next/og";
 // depends on cannot fail on a slow API.
 
 export const alt =
-  "Billionaire Army — U.S. billionaires scored on what they actually give";
+  "Billionaire Army — U.S. billionaires scored on what they actually give, where we hold a record of their giving";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -66,7 +66,7 @@ export default function Image() {
             marginTop: 34,
           }}
         >
-          U.S. billionaires, scored on what they actually give.
+          U.S. billionaires, scored on what they actually give, where we hold a record of their giving.
         </div>
 
         <div
